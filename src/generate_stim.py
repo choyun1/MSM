@@ -22,11 +22,15 @@ except FileNotFoundError:
     STIM_DATABASE = pd.DataFrame(columns=STIM_COLUMNS)
     stim_num = 0
 
-# Make sentences and downsample, center, and make binaural
+
+################################################################################
+# SYNTHESIS ROUTINE
+################################################################################
 dummy_snd = Silence(0.01, new_fs)
 for rate in master_bar(alternation_rates):
-    print("\nSynthesizing {:.1f} Hz stimuli...".format(rate))
+    print("Synthesizing {:.1f} Hz stimuli...".format(rate))
     for i in progress_bar(range(n_stim)):
+        # Make sentences and downsample, center, and make binaural
         talkers, \
         target_sentence, masker_sentence, \
         target_sentence_items, masker_sentence_items = make_sentence()
@@ -37,6 +41,7 @@ for rate in master_bar(alternation_rates):
         target_sentence = target_sentence.make_binaural()
         masker_sentence = masker_sentence.make_binaural()
 
+        # Create trajectories for target and masker
         traj_dur = len(target_sentence)/target_sentence.fs
         target_angle = np.random.choice([-1, 1])*90
         masker_angle = -target_angle
@@ -51,10 +56,12 @@ for rate in master_bar(alternation_rates):
                                                  rate, spatial_resolution,
                                                  masker_moving_right)
 
+        # Synthesize moving sound
         target_sentence = move_sound(target_traj, target_sentence)
         masker_sentence = move_sound(masker_traj, masker_sentence)
         stimulus = (target_sentence + masker_sentence) - 25
 
+        # Save stimulus and stimulus information
         stim_fname = "stim_" + str(stim_num).zfill(6) + ".wav"
         stimulus.save(STIM_DIR/stim_fname)
         STIM_DATABASE = STIM_DATABASE.append( \
@@ -71,4 +78,5 @@ for rate in master_bar(alternation_rates):
              ignore_index=True)
         STIM_DATABASE.to_csv(STIM_DIR/"stimulus_database.csv", index=False)
         stim_num += 1
-print("\n...Finished!")
+
+print("...Finished!")

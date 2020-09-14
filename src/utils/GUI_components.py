@@ -1,7 +1,6 @@
 from psychopy import event, visual
 
-from utils.constants import *
-
+from utils.init_constants import NAMES, VERBS, NUMBERS, ADJECTIVES, NOUNS, CONJUNCTIONS
 
 
 

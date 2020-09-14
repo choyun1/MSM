@@ -1,7 +1,8 @@
 from psychopy import core, event
-from utils.constants import *
 
 
+
+EXIT_KEYS = ("q", "escape")
 
 
 def exit_program(win):
@@ -9,31 +10,14 @@ def exit_program(win):
     core.quit()
 
 
-def make_task_instruction_str(task_type, tone_pattern_ear, sentence_ear, n_patterns):
-    if task_type == "tone_ID":
-        task_str = """
+def make_task_instruction_str():
+    task_str = """
 This is the {:s} task. Please attend to the tone patterns in your {:s} ear, and
 identify the last {:d} patterns embedded in the masker tones. The first pattern
 is always the CONSTANT pattern.
 
 Press 'NEXT' when ready.
     """.format(" ".join(task_type.split("_")).upper(), tone_pattern_ear, n_patterns - 1)
-    elif task_type == "word_recall":
-        task_str = """
-This is the {:s} task. Please attend to the voice that beginning with SUE in
-your {:s} ear, and recall the last {:d} words that she speaks.
-
-Press 'NEXT' when ready.
-    """.format(" ".join(task_type.split("_")).upper(), sentence_ear, n_patterns - 1)
-    else:
-        task_str = """
-This is the {:s} task. On each trial, you will be asked to either identfy the
-last three tone patterns in your {:s} ear, or recall the last {:d} words in
-your {:s} ear spoken by the talker that begins with SUE.
-
-Press 'NEXT' when ready.
-""".format(" ".join(task_type.split("_")).upper(), tone_pattern_ear,
-           n_patterns - 1, sentence_ear)
     return task_str
 
 

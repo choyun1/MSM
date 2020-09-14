@@ -3,7 +3,7 @@ import os
 from psychopy import core, visual, event
 
 # Project imports
-from utils.constants import *
+from utils.init_constants import *
 from utils.stim_tools import *
 from utils.GUI_components import *
 from utils.GUI_routines import *
