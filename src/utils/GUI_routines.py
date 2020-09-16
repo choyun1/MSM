@@ -2,9 +2,6 @@ from psychopy import core, event
 
 
 
-EXIT_KEYS = ("q", "escape")
-
-
 def exit_program(win):
     win.close()
     core.quit()

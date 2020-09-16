@@ -17,13 +17,14 @@ print("Setting paths...")
 if sys.platform == "linux":
     PROJ_DIR = Path.home()/"Sync"/"KiddLab"/"MSM"
     BUGS_DIR = Path.home()/"Sync"/"Sounds"/"BUC-Mx_2014_With8Conjunctions"
-    sys.path.insert(0, "/home/acho/Sync/Python/sigtools")
+    SIGTOOLS_DIR = Path.home()/"Sync"/"Python"/"sigtools"
 elif sys.platform == "win32":
     PROJ_DIR = Path("K:")/"Cho"/"MSM"
     BUGS_DIR = Path("K:")/"Cho"/"BUC-Mx_2014_With8Conjunctions"
-    sys.path.insert(0, "K:\\Cho\\sigtools")
+    SIGTOOLS_DIR = Path("K:")/"Cho"/"sigtools"
 else:
-    raise ValueError("\nunexpected operating system! use 'linux' or 'win32'")
+    raise ValueError("\nunexpected operating system!\nuse 'linux' or 'win32'")
+sys.path.append(str(SIGTOOLS_DIR))
 DATA_DIR = PROJ_DIR/"data"
 STIM_DIR = PROJ_DIR/"assets"/"stimuli"
 
@@ -33,7 +34,6 @@ print("Importing sigtools...")
 from sigtools.utils import *
 from sigtools.sounds import *
 from sigtools.processing import *
-from sigtools.representations import *
 from sigtools.spatialization import *
 
 
@@ -46,9 +46,8 @@ sd.default.channels = 2
 ### Level adjustments
 # Headphone transfer function
 print("Importing level adjustments...")
-L_ADJ_DIR = PROJ_DIR/"assets"/"headphone_calibration"
-FFT_FREQ = np.loadtxt(L_ADJ_DIR/"freq.dat")
-MAG_SPEC = np.loadtxt(L_ADJ_DIR/"smooth_mag.dat")
+FFT_FREQ = np.loadtxt(PROJ_DIR/"assets"/"headphone_calibration"/"freq.dat")
+MAG_SPEC = np.loadtxt(PROJ_DIR/"assets"/"headphone_calibration"/"smooth_mag.dat")
 SCALED_SPEC = MAG_SPEC + 15 + 10*np.log10(len(FFT_FREQ)) - 3
 
 # Level adjustments for audibility across frequency
@@ -69,7 +68,7 @@ ALL_MALE_TALKERS   = ["1M", "2M", "3M", "4M",   "5M",
                       "7M", "8M", "9M", "10M", "11M"       ]
 ALL_FEMALE_TALKERS = ["1F", "2F", "3F",         "5F", "6F",
                       "7F", "8F", "9F",        "11F", "12F"]
-ALL_POSSIBLE_TALKERS = ALL_MALE_TALKERS + ALL_FEMALE_TALKERS
+ALL_TALKERS = ALL_MALE_TALKERS + ALL_FEMALE_TALKERS
 ELIGIBLE_TALKERS = ALL_MALE_TALKERS
 
 NAMES = ["Bob", "Jill", "Jane", "Lynn", "Mike", "Pat", "Sam", "Sue"]
@@ -85,18 +84,16 @@ ALL_BUG_FILES = [fn.stem for fn in BUGS_DIR.glob("*.wav")]
 ELIGIBLE_BUG_FILES = [fn for fn in ALL_BUG_FILES
                           if fn.split("_")[0] in ELIGIBLE_WORDS
                          and fn.split("_")[1] in ELIGIBLE_TALKERS]
-ELIGIBLE_BUG_SNDS  = [SoundLoader( (BUGS_DIR/fn).with_suffix(".wav") )
-                      for fn in ELIGIBLE_BUG_FILES]
-ELIGIBLE_BUG_DICT  = dict(zip(ELIGIBLE_BUG_FILES, ELIGIBLE_BUG_SNDS))
+ELIGIBLE_BUG_SNDS = [SoundLoader( (BUGS_DIR/fn).with_suffix(".wav") )
+                     for fn in ELIGIBLE_BUG_FILES]
+ELIGIBLE_BUG_DICT = dict(zip(ELIGIBLE_BUG_FILES, ELIGIBLE_BUG_SNDS))
 
 
 ### Dataframe columns
-STIM_COLUMNS = ("stim_type",
-                "alternation_rate",
-                "target_talker", "target_sentence",
-                "init_target_position", "init_target_moving_right",
-                "masker_talker", "masker_sentence",
-                "init_masker_position", "init_masker_moving_right")
+EXIT_KEYS = ("q", "escape")
+STIM_COLUMNS = ("stim_type", "alternation_rate",
+                "target_talker", "target_sentence", "init_target_position",
+                "masker_talker", "masker_sentence", "init_masker_position")
 DATA_COLUMNS = ("subject_ID",
                 "run_num", "block_num", "trial_num",
                 "target_talker", "target_sentence",

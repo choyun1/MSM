@@ -42,12 +42,12 @@ for _ in range(N_TRACKS):
     # Calculate current track number
     TRACK_NUM = int(sorted([fn for fn in os.listdir(SAVE_DIR)
                             if "TRACK" in fn])[-1].split("_")[0][-3:]) + 1
-    SAVE_FILE_NAME = "TRACK" + str(TRACK_NUM).zfill(3) + "_" + SUBJECT_ID + "_" \
+    file_name = "TRACK" + str(TRACK_NUM).zfill(3) + "_" + SUBJECT_ID + "_" \
                    + TASK_TYPE + "_" + MASK_TYPE + ".csv"
-    DATA_SAVE_PATH = os.path.join(SAVE_DIR, SAVE_FILE_NAME)
+    save_path = DATA_DIR/file_name
 
     # New data file
-    RUN_DATA = pd.DataFrame(columns=staircase_columns)
+    run_data = pd.DataFrame(columns=DATA_COLUMNS)
 
     # Set ready screen
     helper_text.set_text("Speech on speech staircase.\n\nPress NEXT when ready.")
@@ -79,22 +79,6 @@ for _ in range(N_TRACKS):
 
     ###
     # RUN STAIRCASE
-    if TASK_TYPE == "SIN" and MASK_TYPE == "IM":
-        curr_TMR = 8
-    elif TASK_TYPE == "SIN" and MASK_TYPE == "EM":
-        curr_TMR = -8
-    elif TASK_TYPE == "TIN" and MASK_TYPE == "IM":
-        curr_TMR = 8
-    elif TASK_TYPE == "TIN" and MASK_TYPE == "EM":
-        curr_TMR = 0
-    else:
-        raise ValueError("invalid TASK_TYPE or MASK_TYPE; choose SIN/TIN and IM/EM")
-    curr_dir = -1
-    curr_rev = 0
-    curr_trial = 0
-    curr_consec = 0
-    curr_corr = False
-
     staircase_timer = core.Clock()
     while curr_rev < N_REVERSALS and curr_trial < MAX_TRIALS:
         # Display trial number
@@ -133,7 +117,7 @@ for _ in range(N_TRACKS):
              "curr_TMR": curr_TMR,
              "elapsed_time": elapsed_time},
              ignore_index=True )
-        RUN_DATA[staircase_columns].to_csv(DATA_SAVE_PATH, index=False)
+        RUN_DATA.to_csv(DATA_SAVE_PATH, index=False)
 
         curr_trial += 1
 

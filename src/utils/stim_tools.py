@@ -57,8 +57,7 @@ def make_sentence():
 
 
 def make_circular_sinuisoidal_trajectory(r, elev, init_angle,
-                                         T_dur, freq, spatial_resolution,
-                                         init_moving_right=True):
+                                         T_dur, freq, spatial_resolution):
     """
     r = radius [cm]
     elev = elevation [degrees]
@@ -66,13 +65,11 @@ def make_circular_sinuisoidal_trajectory(r, elev, init_angle,
     T_dur = duration of the trajectory
     freq = frequency of oscillation
     spatial_resolution = average points per degree over the whole trajectory
-    init_moving_right = initial direction of motion for target is to the right
     """
     N = int(180*spatial_resolution*T_dur*freq) # number of spatial samples
     A = 90
     t = np.linspace(0, T_dur, N)
-    angular_traj = 2*(int(init_moving_right) - 0.5)*A \
-                    *np.sin(2*np.pi*(freq*t + init_angle/360))
+    angular_traj = A*np.sin(2*np.pi*(freq*t + init_angle/360))
     hcc_coords = np.array([(r, elev, angle) for angle in angular_traj])
     hcc_coords_tuple = list(map(tuple, hcc_coords))
     rect_coords_tuple = [hcc_to_rect(*coords) for coords in hcc_coords_tuple]
