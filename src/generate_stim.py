@@ -10,8 +10,8 @@ r = 100 # cm
 elev = 0
 new_fs = 16000
 spatial_resolution = 2 # average points per degree over the whole trajectory
-alternation_rates = [0.1, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-n_stim = 100
+alternation_rates = [15]
+n_stim = 299
 stim_type = "SOS"
 
 # Load stimulus database

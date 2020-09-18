@@ -90,7 +90,7 @@ ELIGIBLE_BUG_DICT = dict(zip(ELIGIBLE_BUG_FILES, ELIGIBLE_BUG_SNDS))
 
 
 ### Dataframe columns
-EXIT_KEYS = ("q", "escape")
+# EXIT_KEYS = ("q", "escape")
 STIM_COLUMNS = ("stim_type", "alternation_rate",
                 "target_talker", "target_sentence", "init_target_position",
                 "masker_talker", "masker_sentence", "init_masker_position")

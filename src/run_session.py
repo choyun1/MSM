@@ -18,6 +18,8 @@ TASK_TYPE = "SOS"
 # Session parameters
 N_BLOCKS = 3
 N_TRIALS = 100
+ANSWER_CHOICES = VERBS + NUMBERS + ADJECTIVES + NOUNS + CONJUNCTIONS \
+               + NAMES + VERBS + NUMBERS + ADJECTIVES + NOUNS
 
 # Initialize GUI elements
 win = \
@@ -27,12 +29,13 @@ win = \
         monitor="testMonitor",
         units="deg"
     )
-word_submission_queue = WordQueue(win, N_PATTERNS, 7.5)
-word_answer_queue     = WordQueue(win, N_PATTERNS, 5)
-word_grid_interface   = WordGridInterface(win)
 push_button = PushButton(win)
-helper_text = SupportingText(win)
 mouse = CustomMouse(win=win)
+helper_text = SupportingText(win)
+word_submission_queue = WordQueue(win, n_slots=11, y_pos=7.5, width=2)
+word_answer_queue     = WordQueue(win, n_slots=11, y_pos=5,   width=2)
+word_grid_interface   = WordGridInterface(win, column_len=len(VERBS),
+                                          words_in_grid=ANSWER_CHOICES)
 
 
 ################################################################################

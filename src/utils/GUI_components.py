@@ -21,9 +21,8 @@ class CustomMouse(event.Mouse):
 
 
 class WordQueue:
-    def __init__(self, win, n_slots, y_pos):
+    def __init__(self, win, n_slots, y_pos, width):
         gap = 1
-        width = 4.5
         boxes = [
             visual.Rect(
                 win,
@@ -104,11 +103,9 @@ class WordQueue:
 
 
 class WordGridInterface:
-    def __init__(self, win, x_offset=-5, y_offset=4):
-        column_length = len(VERBS)
-        words_in_grid = VERBS + ADJECTIVES + NOUNS
-        word_box_width = 5
-        word_box_height = 1.5
+    def __init__(self, win, column_len, words_in_grid,
+                 x_offset=-5, y_offset=4,
+                 word_box_width=4, word_box_height=1.5):
         word_boxes = [
             visual.Rect(
                 win,
@@ -119,8 +116,8 @@ class WordGridInterface:
                 fillColor=(0, 0, 0),
                 fillColorSpace="rgb255",
                 opacity=0.,
-                pos=( (i//column_length)*word_box_width + x_offset,
-                     -(i%column_length)*word_box_height + y_offset) )
+                pos=( (i//column_len)*word_box_width  + x_offset,
+                     -(i %column_len)*word_box_height + y_offset) )
             for i in range(len(words_in_grid))
             ]
         word_labels = [
@@ -130,12 +127,11 @@ class WordGridInterface:
                 color=(0, 0, 0),
                 colorSpace="rgb255",
                 height=0.8,
-                pos=( (i//column_length)*word_box_width + x_offset,
-                     -(i%column_length)*word_box_height + y_offset) )
+                pos=( (i//column_len)*word_box_width  + x_offset,
+                     -(i %column_len)*word_box_height + y_offset) )
             for i, word in enumerate(words_in_grid)
         ]
         self.win = win
-        self.column_length = column_length
         self.word_boxes = word_boxes
         self.word_labels = word_labels
 
