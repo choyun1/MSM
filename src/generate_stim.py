@@ -16,10 +16,10 @@ stim_type = "SOS"
 
 # Load stimulus database
 try:
-    STIM_DATABASE = pd.read_csv(STIM_DIR/"stimulus_database.csv")
-    stim_num = len(STIM_DATABASE)
+    stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
+    stim_num = len(stim_database)
 except FileNotFoundError:
-    STIM_DATABASE = pd.DataFrame(columns=STIM_COLUMNS)
+    stim_database = pd.DataFrame(columns=STIM_COLUMNS)
     stim_num = 0
 
 
@@ -60,7 +60,7 @@ for rate in alternation_rates:
         # Save stimulus and stimulus information
         stim_fname = "stim_" + str(stim_num).zfill(6) + ".wav"
         stimulus.save(STIM_DIR/stim_fname)
-        STIM_DATABASE = STIM_DATABASE.append( \
+        stim_database = stim_database.append( \
             {"stim_type": stim_type,
              "alternation_rate": rate,
              "target_talker": talkers[0],
@@ -70,7 +70,7 @@ for rate in alternation_rates:
              "masker_sentence": " ".join(masker_sentence_items),
              "init_masker_position": masker_angle},
              ignore_index=True)
-        STIM_DATABASE.to_csv(STIM_DIR/"stimulus_database.csv", index=False)
+        stim_database.to_csv(STIM_DIR/"stimulus_database.csv", index=False)
         stim_num += 1
 
 print("\n...Finished!")

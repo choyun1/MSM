@@ -75,3 +75,30 @@ def make_circular_sinuisoidal_trajectory(r, elev, init_angle,
     rect_coords_tuple = [hcc_to_rect(*coords) for coords in hcc_coords_tuple]
     rect_coords = tuple_to_array(rect_coords_tuple)
     return rect_coords
+
+
+def set_stimuli_for_block(n_trials_per_block_per_rate, rates, curr_run_data):
+    stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
+    stimulus_list = []
+    for rate in rates:
+        all_stim  = set(
+            stim_database[stim_database["alternation_rate"] == rate].index.values)
+        used_stim = set(
+            curr_run_data[curr_run_data["alternation_rate"] == rate].index.values)
+        available_stim = all_stim - used_stim
+        chosen_stim = np.random.choice(list(available_stim),
+                                       n_trials_per_block_per_rate,
+                                       replace=False)
+        for stim_ID in chosen_stim:
+            stim_path = STIM_DIR/("stim_" + str(stim_ID).zfill(6) + ".wav")
+            stimulus = SoundLoader(stim_path)
+            alternation_rate = stim_database.alternation_rate[stim_ID]
+            target_talker = stim_database.target_talker[stim_ID]
+            target_sentence = stim_database.target_sentence[stim_ID]
+            masker_talker = stim_database.masker_talker[stim_ID]
+            masker_sentence = stim_database.masker_sentence[stim_ID]
+            stimulus_list.append((stimulus, alternation_rate, stim_ID,
+                                  target_talker, target_sentence,
+                                  masker_talker, masker_sentence))
+    np.random.shuffle(stimulus_list)
+    return stimulus_list

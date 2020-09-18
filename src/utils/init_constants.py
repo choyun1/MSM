@@ -7,7 +7,6 @@ import pandas as pd
 import sounddevice as sd
 
 
-print()
 print(80*"=")
 print("INITIALIZATION")
 print(80*"=")
@@ -94,14 +93,13 @@ ELIGIBLE_BUG_DICT = dict(zip(ELIGIBLE_BUG_FILES, ELIGIBLE_BUG_SNDS))
 STIM_COLUMNS = ("stim_type", "alternation_rate",
                 "target_talker", "target_sentence", "init_target_position",
                 "masker_talker", "masker_sentence", "init_masker_position")
-DATA_COLUMNS = ("subject_ID",
-                "run_num", "block_num", "trial_num",
+DATA_COLUMNS = ("run_num", "subject_ID", "task_type",
+                "block_num", "trial_num",
+                "alternation_rate", "stimulus_ID",
                 "target_talker", "target_sentence",
                 "masker_talker", "masker_sentence",
                 "subj_response", "correct",
-                "elapsed_time",
-                "stim_file")
+                "elapsed_time")
 
 print("Initialization complete!")
 print(80*"=")
-print()

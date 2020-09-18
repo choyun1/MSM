@@ -1,8 +1,5 @@
 from psychopy import event, visual
 
-from utils.init_constants import NAMES, VERBS, NUMBERS, ADJECTIVES, NOUNS, CONJUNCTIONS
-
-
 
 class CustomMouse(event.Mouse):
     """Class that extends PsychoPy Mouse class to detect left click releases."""
@@ -26,7 +23,7 @@ class WordQueue:
         boxes = [
             visual.Rect(
                 win,
-                width=4,
+                width=width,
                 height=1,
                 lineColor=(0, 255, 0),
                 lineColorSpace="rgb255",
@@ -63,14 +60,8 @@ class WordQueue:
             self.texts.append(text_str)
             self.curr_queue_pos += 1
 
-    # def pop(self, position):
-    #     ### TODO: There's a bug in the popping capability!
-    #     """pops a tone pattern from any position"""
-    #     for idx in range(position, len(self.imgs) - 1):
-    #         self.imgs[idx].image = self.imgs[idx + 1].image
-    #     self.imgs[-1].image = None
-    #     self.patterns.pop(position)
-    #     self.curr_queue_pos = max(self.curr_queue_pos - 1, 0)
+    def pop(self, position):
+        raise NotImplementedError
 
     def reset(self):
         self.curr_queue_pos = 0

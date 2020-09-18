@@ -1,9 +1,4 @@
-from functools import wraps
-
 from psychopy import core, event
-
-
-EXIT_KEYS = ("q", "escape")
 
 
 def exit_program(win):
@@ -23,6 +18,7 @@ Press 'NEXT' when ready.
 
 
 def push_button_wait_logic(func):
+    from functools import wraps
     @wraps(func)
     def wrapper(*args, **kwargs):
         win = args[0]
@@ -32,7 +28,7 @@ def push_button_wait_logic(func):
             mouse.clickReset()
 
             # Check for exit keyboard input
-            exit_keys = event.getKeys(keyList=EXIT_KEYS)
+            exit_keys = event.getKeys(keyList=("q", "escape"))
             if exit_keys:
                 exit_program(win)
 
@@ -53,6 +49,15 @@ def wait_for_push_button(win, push_button, mouse):
 @push_button_wait_logic
 def grid_logic(win, push_button, mouse, n_slots, helper_text,
                word_grid_interface, word_submission_queue):
+    # Flip frame
+    word_grid_interface.draw()
+    word_submission_queue.draw()
+    helper_text.set_pos((0, 11))
+    helper_text.set_text("Select the words in the order they were played.")
+    helper_text.draw()
+    push_button.draw()
+    win.flip()
+
     # Check for number of selected tone patterns in the submission box
     if len(word_submission_queue) == n_slots:
         push_button.enable()
@@ -70,15 +75,6 @@ def grid_logic(win, push_button, mouse, n_slots, helper_text,
         # Check if the mouse cursor is contained in push button
         if push_button.contains(curr_mouse_pos) and push_button.is_enabled():
             push_button.set_pressed()
-
-    # Flip frame
-    word_grid_interface.draw()
-    word_submission_queue.draw()
-    helper_text.set_pos((0, 11))
-    helper_text.set_text("Select the words in the order they were played.")
-    helper_text.draw()
-    push_button.draw()
-    win.flip()
 
 
 def do_word_recall_task(win, push_button, mouse, helper_text,
@@ -127,7 +123,6 @@ def do_word_recall_task(win, push_button, mouse, helper_text,
     word_answer_queue.draw()
     word_submission_queue.draw()
     win.flip()
-
     core.wait(0.5)
 
     # Re-draw elements for waiting
@@ -138,7 +133,6 @@ def do_word_recall_task(win, push_button, mouse, helper_text,
     word_answer_queue.draw()
     word_submission_queue.draw()
     win.flip()
-
     wait_for_push_button(win, push_button, mouse)
 
     return subj_response, subj_response_correct
