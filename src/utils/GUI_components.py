@@ -18,19 +18,18 @@ class CustomMouse(event.Mouse):
 
 
 class WordQueue:
-    def __init__(self, win, n_slots, y_pos, width):
-        gap = 1
+    def __init__(self, win, n_slots, y_pos, gap, width, height):
         boxes = [
             visual.Rect(
                 win,
                 width=width,
-                height=1,
+                height=height,
                 lineColor=(0, 255, 0),
                 lineColorSpace="rgb255",
                 fillColor=(0, 255, 0),
                 fillColorSpace="rgb255",
                 opacity=0.,
-                pos=( -n_slots*width/2 + i*(gap + width), y_pos )
+                pos=( -n_slots*width/2 + (i - 1)*(gap + width), y_pos )
             )
             for i in range(n_slots)
         ]
@@ -40,8 +39,8 @@ class WordQueue:
                 text="",
                 color=(0, 0, 0),
                 colorSpace="rgb255",
-                height=0.8,
-                pos=( -n_slots*width/2 + i*(gap + width), y_pos )
+                height=0.8*height,
+                pos=( -n_slots*width/2 + (i - 1)*(gap + width), y_pos )
             )
             for i in range(n_slots)
         ]
@@ -95,8 +94,8 @@ class WordQueue:
 
 class WordGridInterface:
     def __init__(self, win, column_len, words_in_grid,
-                 x_offset=-5, y_offset=4,
-                 word_box_width=4, word_box_height=1.5):
+                 x_offset, y_offset,
+                 word_box_width, word_box_height):
         word_boxes = [
             visual.Rect(
                 win,

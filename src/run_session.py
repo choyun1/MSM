@@ -10,11 +10,12 @@ from utils.GUI_routines import *
 ################################################################################
 # Session parameters
 run_num = len([x for x in DATA_DIR.glob("*.csv")])
-subject_ID = "test"
+subject_ID = "AYC"
 task_type = "SOS"
-n_trials_per_block_per_rate = 1
 n_blocks = 1
-rates = [0.1, 0.5, 1, 2, 4, 5, 6, 8, 10, 15]
+n_trials_per_block_per_rate = 1
+# conditions = [0, 0.1, 0.5, 1, 2, 4, 5, 6, 8, 10, 15]
+conditions = ["co-located", "opposite", 0.1, 0.5, 1, 2, 4, 5, 6, 8, 10, 15]
 
 # Set save file path and create data structure
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"
@@ -35,16 +36,19 @@ win = \
 push_button = PushButton(win)
 mouse = CustomMouse(win=win)
 helper_text = SupportingText(win)
-word_submission_queue = WordQueue(win, n_slots=11, y_pos=7.5, width=2)
-word_answer_queue     = WordQueue(win, n_slots=11, y_pos=5,   width=2)
+word_submission_queue = WordQueue(win, n_slots=11, y_pos=7.5, gap=1, width=3, height=1)
+word_answer_queue     = WordQueue(win, n_slots=11, y_pos=5,   gap=1, width=3, height=1)
 word_grid_interface   = WordGridInterface(win, column_len=len(VERBS),
-                                          words_in_grid=answer_choices)
+                                          words_in_grid=answer_choices,
+                                          x_offset=-15.5, y_offset=3.5,
+                                          word_box_width=3.75, word_box_height=1.5)
 
 ################################################################################
 # RUN EXPT LOOP
 ################################################################################
 expt_timer = core.Clock()
 
+# Show task instructions
 task_instruction_txt = make_task_instruction_str()
 helper_text.set_text(task_instruction_txt)
 helper_text.draw()
@@ -54,8 +58,8 @@ win.flip()
 wait_for_push_button(win, push_button, mouse)
 
 for block_num in range(n_blocks):
-    block_stim_list = set_stimuli_for_block(n_trials_per_block_per_rate, rates,
-                                            run_data)
+    block_stim_list = set_stimuli_for_block(n_trials_per_block_per_rate,
+                                            conditions, run_data)
 
     # Set ready screen
     block_ready_txt = "BLOCK {:d} of {:d}\n\nPress NEXT when ready.".format(
@@ -77,12 +81,9 @@ for block_num in range(n_blocks):
         win.flip()
 
         # Make and play stimulus
-        stimulus, alternation_rate, stimulus_ID, \
-        target_talker, target_sentence, \
-        masker_talker, masker_sentence = block_stim_list[trial_num]
-        target_sentence_items = target_sentence.split(" ")
-        core.wait(0.2)
-        # stimulus.play(blocking=True)
+        stimulus, stimulus_ID, target_sentence_items = block_stim_list[trial_num]
+        core.wait(0.25)
+        stimulus.play(blocking=True)
 
         # Wait for subject response
         subj_response, correct = \
@@ -90,7 +91,6 @@ for block_num in range(n_blocks):
                                 word_submission_queue, word_answer_queue,
                                 word_grid_interface,
                                 target_sentence_items)
-
         elapsed_time = expt_timer.getTime()
 
         # Save data
@@ -100,19 +100,14 @@ for block_num in range(n_blocks):
              "task_type": task_type,
              "block_num": block_num + 1,
              "trial_num": trial_num + 1,
-             "alternation_rate": alternation_rate,
              "stimulus_ID": stimulus_ID,
-             "target_talker": target_talker,
-             "target_sentence": target_sentence,
-             "masker_talker": masker_talker,
-             "masker_sentence": masker_sentence,
              "subj_response": " ".join(subj_response),
              "correct": correct,
              "elapsed_time": elapsed_time},
              ignore_index=True)
         run_data.to_csv(save_path, index=False)
-end_expt_txt = "Run complete! Please see experimenter."
-helper_text.set_text(end_expt_txt)
+# End screen
+helper_text.set_text("Run complete! Please see experimenter.")
 helper_text.draw()
 win.flip()
 wait_for_push_button(win, push_button, mouse)

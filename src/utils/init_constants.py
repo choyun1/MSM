@@ -18,9 +18,9 @@ if sys.platform == "linux":
     BUGS_DIR = Path.home()/"Sync"/"Sounds"/"BUC-Mx_2014_With8Conjunctions"
     SIGTOOLS_DIR = Path.home()/"Sync"/"Python"/"sigtools"
 elif sys.platform == "win32":
-    PROJ_DIR = Path("K:")/"Cho"/"MSM"
-    BUGS_DIR = Path("K:")/"Cho"/"BUC-Mx_2014_With8Conjunctions"
-    SIGTOOLS_DIR = Path("K:")/"Cho"/"sigtools"
+    PROJ_DIR = Path("K:/")/"Cho"/"MSM"
+    BUGS_DIR = Path("K:/")/"Cho"/"BUC-Mx_2014_With8Conjunctions"
+    SIGTOOLS_DIR = Path("K:/")/"Cho"/"sigtools"
 else:
     raise ValueError("\nunexpected operating system!\nuse 'linux' or 'win32'")
 sys.path.append(str(SIGTOOLS_DIR))
@@ -89,17 +89,15 @@ ELIGIBLE_BUG_DICT = dict(zip(ELIGIBLE_BUG_FILES, ELIGIBLE_BUG_SNDS))
 
 
 ### Dataframe columns
-# EXIT_KEYS = ("q", "escape")
-STIM_COLUMNS = ("stim_type", "alternation_rate",
-                "target_talker", "target_sentence", "init_target_position",
-                "masker_talker", "masker_sentence", "init_masker_position")
-DATA_COLUMNS = ("run_num", "subject_ID", "task_type",
-                "block_num", "trial_num",
-                "alternation_rate", "stimulus_ID",
+STIM_COLUMNS = ["stim_type",
                 "target_talker", "target_sentence",
+                "target_alt_rate", "target_init_position",
                 "masker_talker", "masker_sentence",
+                "masker_alt_rate", "masker_init_position"]
+DATA_COLUMNS = ["run_num", "subject_ID", "task_type",
+                "block_num", "trial_num", "stimulus_ID",
                 "subj_response", "correct",
-                "elapsed_time")
+                "elapsed_time"]
 
 print("Initialization complete!")
 print(80*"=")

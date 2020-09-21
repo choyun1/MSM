@@ -53,7 +53,7 @@ def grid_logic(win, push_button, mouse, n_slots, helper_text,
     word_grid_interface.draw()
     word_submission_queue.draw()
     helper_text.set_pos((0, 11))
-    helper_text.set_text("Select the words in the order they were played.")
+    helper_text.set_text("Select the words in the order they were spoken.")
     helper_text.draw()
     push_button.draw()
     win.flip()
@@ -97,18 +97,18 @@ def do_word_recall_task(win, push_button, mouse, helper_text,
     # Always insert constant pattern into the submission queue
     word_submission_queue.insert("SUE")
 
-    # Check for user input
+    # Get user response
     n_slots = len(target_sentence_items)
     grid_logic(win, push_button, mouse, n_slots, helper_text,
                word_grid_interface, word_submission_queue)
 
-    # Score subject responses, EXCLUDING the first constant pattern
+    # Score responses EXCLUDING the first constant pattern
     subj_response = word_submission_queue.texts
     subj_response_correct = \
         sum( word_answer_queue.texts[i] == subj_response[i]
              for i in range(1, len(subj_response)) )
 
-    # Compare the answer and submission one by one to see which is correct
+    # Toggle color indicating correct/incorrect
     for i in range(1, len(word_submission_queue)):
         if word_answer_queue.texts[i] == word_submission_queue.texts[i]:
             word_submission_queue.set_border_color(i, (0, 255, 0))
@@ -117,15 +117,13 @@ def do_word_recall_task(win, push_button, mouse, helper_text,
         word_submission_queue.toggle_border(i)
 
     # Display answer and feedback
-    helper_text.set_pos((-18, 5))
-    helper_text.set_text("CORRECT ANSWER")
-    helper_text.draw()
     word_answer_queue.draw()
     word_submission_queue.draw()
     win.flip()
     core.wait(0.5)
 
     # Re-draw elements for waiting
+    helper_text.set_text("Press 'NEXT' to continue")
     helper_text.draw()
     push_button.set_text("NEXT")
     push_button.enable()
