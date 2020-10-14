@@ -18,6 +18,7 @@ if sys.platform == "linux":
     BUGS_DIR = Path.home()/"Sync"/"Sounds"/"BUC-Mx_2014_With8Conjunctions"
     SIGTOOLS_DIR = Path.home()/"Sync"/"Python"/"sigtools"
 elif sys.platform == "win32":
+    sd.default.device = "ASIO Hammerfall DSP"
     PROJ_DIR = Path("K:/")/"Cho"/"MSM"
     BUGS_DIR = Path("K:/")/"Cho"/"BUC-Mx_2014_With8Conjunctions"
     SIGTOOLS_DIR = Path("K:/")/"Cho"/"sigtools"
@@ -26,6 +27,7 @@ else:
 sys.path.append(str(SIGTOOLS_DIR))
 DATA_DIR = PROJ_DIR/"data"
 STIM_DIR = PROJ_DIR/"assets"/"stimuli"
+IMGS_DIR = PROJ_DIR/"assets"/"img"
 
 
 ### sigtools imports
@@ -38,7 +40,6 @@ from sigtools.spatialization import *
 
 ### Set up sounddevice
 print("Setting up sounddevice...")
-# sd.default.device = "ASIO Hammerfall DSP"
 sd.default.channels = 2
 
 
@@ -88,12 +89,41 @@ ELIGIBLE_BUG_SNDS = [SoundLoader( (BUGS_DIR/fn).with_suffix(".wav") )
 ELIGIBLE_BUG_DICT = dict(zip(ELIGIBLE_BUG_FILES, ELIGIBLE_BUG_SNDS))
 
 
+### Definitions for BUG corpus
+print("Set values for tone pattern synthesis...")
+PATTERN_TYPES = ["CONSTANT", "RISING", "FALLING",
+                 "ALTERNATING", "STEP-UP", "STEP-DOWN"]
+# CENTER_FREQS = np.array([ 215,  269,  336,  420,  525,  656,  820, 1026,
+#                          1282, 1602, 2003, 2504, 3129, 3912, 4890, 6612])
+CENTER_FREQS = np.array([215, 269, 336, 420, 525, 656, 820, 1026, 1282, 1602])
+MIN_BAND_VAL, MAX_BAND_VAL = -7, 7
+BAND_VALUES = np.linspace(MIN_BAND_VAL, MAX_BAND_VAL, 8)
+PATTERN_IMG_PATHS = [
+    IMGS_DIR/"tone_pattern_constant.png",
+    IMGS_DIR/"tone_pattern_rising.png",
+    IMGS_DIR/"tone_pattern_falling.png",
+    IMGS_DIR/"tone_pattern_alternating_UP_DOWN.png",
+    IMGS_DIR/"tone_pattern_step_up.png",
+    IMGS_DIR/"tone_pattern_step_down.png"
+]
+PATTERN_SMALL_IMG_PATHS = [
+    IMGS_DIR/"tone_pattern_constant_small.png",
+    IMGS_DIR/"tone_pattern_rising_small.png",
+    IMGS_DIR/"tone_pattern_falling_small.png",
+    IMGS_DIR/"tone_pattern_alternating_UP_DOWN_small.png",
+    IMGS_DIR/"tone_pattern_step_up_small.png",
+    IMGS_DIR/"tone_pattern_step_down_small.png"
+]
+
+
 ### Dataframe columns
 STIM_COLUMNS = ["stim_type",
                 "target_talker", "target_sentence",
                 "target_alt_rate", "target_init_position",
-                "masker_talker", "masker_sentence",
-                "masker_alt_rate", "masker_init_position"]
+                "masker1_talker", "masker1_sentence",
+                "masker1_alt_rate", "masker1_init_position",
+                "masker2_talker", "masker2_sentence",
+                "masker2_alt_rate", "masker2_init_position"]
 DATA_COLUMNS = ["run_num", "subject_ID", "task_type",
                 "block_num", "trial_num", "stimulus_ID",
                 "subj_response", "correct",

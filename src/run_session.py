@@ -12,18 +12,19 @@ from utils.GUI_routines import *
 run_num = len([x for x in DATA_DIR.glob("*.csv")])
 subject_ID = "AYC"
 task_type = "SOS"
-n_blocks = 1
-n_trials_per_block_per_rate = 1
-# conditions = [0, 0.1, 0.5, 1, 2, 4, 5, 6, 8, 10, 15]
-conditions = ["co-located", "opposite", 0.1, 0.5, 1, 2, 4, 5, 6, 8, 10, 15]
+n_blocks = 5
+n_trials_per_block_per_rate = 4
+conditions = ["co-located", "opposite", 0.5, 2, 4]
+# conditions = ["co-located", "opposite", 0.1, 0.5, 1, 2, 4, 5, 6, 8, 10, 15]
 
 # Set save file path and create data structure
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"
 save_path = DATA_DIR/file_name
 run_data = pd.DataFrame(columns=DATA_COLUMNS)
-answer_choices = VERBS + NUMBERS + ADJECTIVES + NOUNS + CONJUNCTIONS \
-               + NAMES + VERBS + NUMBERS + ADJECTIVES + NOUNS
-n_trials_per_block = len(rates)*n_trials_per_block_per_rate
+answer_choices = VERBS + NUMBERS + ADJECTIVES + NOUNS
+# answer_choices = VERBS + NUMBERS + ADJECTIVES + NOUNS + CONJUNCTIONS \
+#                + NAMES + VERBS + NUMBERS + ADJECTIVES + NOUNS
+n_trials_per_block = len(conditions)*n_trials_per_block_per_rate
 
 # Initialize GUI elements
 win = \

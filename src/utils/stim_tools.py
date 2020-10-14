@@ -14,45 +14,94 @@ def compute_attenuation(level, freq=None):
     return db_atten
 
 
-def make_sentence():
-    n_talkers = 2
-
+def make_sentence(n_talkers):
     # Randomly select target and masker talkers and words
-    talkers = list(np.random.choice(ELIGIBLE_TALKERS, n_talkers, replace=False))
-    all_sentences = \
+    talkers = np.random.choice(ELIGIBLE_TALKERS, n_talkers, replace=False)
+    sentence_words = \
         np.hstack( [np.random.choice(list(set(NAMES) - set(["Sue"])),
                                      (n_talkers, 1), replace=False),
                     np.random.choice(VERBS, (n_talkers, 1), replace=False),
                     np.random.choice(NUMBERS, (n_talkers, 1), replace=False),
                     np.random.choice(ADJECTIVES, (n_talkers, 1), replace=False),
-                    np.random.choice(NOUNS, (n_talkers, 1), replace=False),
-                    np.random.choice(CONJUNCTIONS, (n_talkers, 1), replace=False),
-                    np.random.choice(list(set(NAMES) - set(["Sue"])),
-                                     (n_talkers, 1), replace=False),
-                    np.random.choice(VERBS, (n_talkers, 1), replace=False),
-                    np.random.choice(NUMBERS, (n_talkers, 1), replace=False),
-                    np.random.choice(ADJECTIVES, (n_talkers, 1), replace=False),
                     np.random.choice(NOUNS, (n_talkers, 1), replace=False)] )
-    all_sentences[0, 0] = "Sue"
+    sentence_words[0, 0] = "Sue"
+    sentence_sounds = [ concat_sounds([ ELIGIBLE_BUG_DICT["_".join([word, talkers[i]])]
+                                        for word in sentence_words[i, :] ])
+                        for i in range(n_talkers) ]
+    sentence_sounds = normalize_rms(sentence_sounds)
+    return talkers, sentence_words, sentence_sounds
 
-    # Make target sentence
-    target_talker = talkers[0]
-    target_sentence_items = list(all_sentences[0, :])
-    target_sentence = concat_sounds([ELIGIBLE_BUG_DICT["_".join([word, target_talker])]
-                                     for word in target_sentence_items])
-    # Make masker sentence
-    masker_talker = talkers[1]
-    masker_sentence_items = list(all_sentences[1, :])
-    masker_sentence = concat_sounds([ELIGIBLE_BUG_DICT["_".join([word, masker_talker])]
-                                     for word in masker_sentence_items])
 
-    # Normalize RMS
-    target_sentence, masker_sentence = \
-        normalize_rms([target_sentence, masker_sentence])
+def make_tone_pattern(pattern, fs, CF, n_tones, tone_dur, edge_dur):
+    """Make tone pattern"""
+    pattern = pattern.upper()
+    # Define the sequence of % deviation from CF for the target pattern
+    if pattern == "CONSTANT": # constant
+        band_value_sequence = n_tones*[np.random.choice(BAND_VALUES)]
+    elif pattern == "RISING": # rising
+        band_value_sequence = np.linspace(MIN_BAND_VAL, MAX_BAND_VAL, n_tones)
+    elif pattern == "FALLING": # falling
+        band_value_sequence = np.linspace(MAX_BAND_VAL, MIN_BAND_VAL, n_tones)
+    elif pattern == "ALTERNATING": # alternating
+        from itertools import cycle
+        if np.random.randint(0, 2) == 0: # low high low high ...
+            alternating_cycle = cycle([MIN_BAND_VAL, MAX_BAND_VAL])
+        else: # high low high low ...
+            alternating_cycle = cycle([MAX_BAND_VAL, MIN_BAND_VAL])
+        band_value_sequence = [next(alternating_cycle) for _ in range(n_tones)]
+    elif pattern == "STEP-UP" or pattern == "STEP-DOWN": # step up or step down
+        if round(n_tones) % 2 == 0: # even number of tones
+            lower_half = n_tones//2*[MIN_BAND_VAL]
+            upper_half = n_tones//2*[MAX_BAND_VAL]
+        else: # odd number of tones
+            lower_half = ((n_tones + 1)//2 - 1)*[MIN_BAND_VAL]
+            upper_half = ((n_tones + 1)//2)*[MAX_BAND_VAL]
 
-    return talkers, \
-           target_sentence, masker_sentence, \
-           target_sentence_items, masker_sentence_items
+        if pattern == "STEP-UP": # step up
+            band_value_sequence = lower_half + upper_half
+        else: # step down
+            band_value_sequence = upper_half + lower_half
+    else:
+        raise ValueError("invalid tone pattern")
+
+    # Generate the target pattern
+    freq_sequence = [(1 + band_value/100)*CF
+                     for band_value in band_value_sequence]
+    tone_sequence = [ramp_edges(PureTone(tone_dur, fs, freq), edge_dur) for freq in freq_sequence]
+    return normalize_rms([concat_sounds(tone_sequence)])[0]
+
+
+def make_TP_sequence(n_seqs, seq_len, protected_delta=1,
+                     fs=44100, n_tones=8, tone_dur=80e-3, edge_dur=20e-3, gap_dur=100e-3):
+    # Choose frequency bands
+    if n_seqs >= len(CENTER_FREQS) - 2*protected_delta:
+        raise ValueError("too many pattern sequences requested")
+    bands_chosen = False
+    while not bands_chosen:
+        bands_draw = np.random.choice(len(CENTER_FREQS), n_seqs, replace=False)
+        band_differences_from_target = np.array([abs(bands_draw[i] - bands_draw[0])
+                                                 for i in range(1, n_seqs)])
+        if not any(band_differences_from_target <= protected_delta):
+            bands_chosen = True
+    CFs = CENTER_FREQS[bands_draw]
+
+    # Choose the patterns
+    patterns = np.random.choice(PATTERN_TYPES, (n_seqs, seq_len))
+    patterns[:, 0] = np.random.choice(list(set(PATTERN_TYPES) - set(["CONSTANT"])), n_seqs, replace=False)
+    patterns[0, 0] = "CONSTANT"
+
+    # Make the pattern sequences
+    gap = Silence(gap_dur, fs)
+    tp_seqs = []
+    for i in range(n_seqs):
+        curr_seq_list = [make_tone_pattern(pattern, fs, CFs[i], n_tones, tone_dur, edge_dur)
+                         for pattern in patterns[i, :]]
+        # insert silent gap between each tone pattern
+        temp_list = (2*len(curr_seq_list) - 1)*[gap]
+        temp_list[0::2] = curr_seq_list
+        temp_list = [gap] + temp_list + [gap]
+        tp_seqs.append(concat_sounds(temp_list))
+    return CFs, patterns, tp_seqs
 
 
 def make_circular_sinuisoidal_trajectory(r, elev, init_angle,
@@ -78,30 +127,28 @@ def make_circular_sinuisoidal_trajectory(r, elev, init_angle,
 
 def set_stimuli_for_block(n_trials_per_block_per_rate, conditions, curr_run_data):
     stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
+    curr_used_stim = stim_database.iloc[curr_run_data["stimulus_ID"]]
     stimulus_list = []
     for cond in conditions:
         if cond == "co-located":
             curr_cond_all_stim = stim_database[
                 (stim_database["target_alt_rate"] == 0) &
-                (stim_database["target_init_position"] == 0)].index.values
-            curr_cond_used_stim = stim_database.iloc[
-                    curr_run_data["stimulus_ID"].values][
-                (stim_database["target_alt_rate"] == 0) &
-                (stim_database["target_init_position"] == 0)].index.values
+                (stim_database["target_init_position"] == 0)].index
+            curr_cond_used_stim = curr_used_stim[
+                (curr_used_stim["target_alt_rate"] == 0) &
+                (curr_used_stim["target_init_position"] == 0)].index
         elif cond == "opposite":
             curr_cond_all_stim = stim_database[
                 (stim_database["target_alt_rate"] == 0) &
-                (stim_database["target_init_position"] != 0)].index.values
-            curr_cond_used_stim = stim_database.iloc[
-                    curr_run_data["stimulus_ID"].values][
-                (stim_database["target_alt_rate"] == 0) &
-                (stim_database["target_init_position"] != 0)].index.values
+                (stim_database["target_init_position"] != 0)].index
+            curr_cond_used_stim = curr_used_stim[
+                (curr_used_stim["target_alt_rate"] == 0) &
+                (curr_used_stim["target_init_position"] != 0)].index
         else:
             curr_cond_all_stim = stim_database[
-                stim_database["target_alt_rate"] == cond].index.values
-            curr_cond_used_stim = stim_database.iloc[
-                    curr_run_data["stimulus_ID"].values][
-                stim_database["target_alt_rate"] == cond].index.values
+                stim_database["target_alt_rate"] == cond].index
+            curr_cond_used_stim = curr_used_stim[
+                curr_used_stim["target_alt_rate"] == cond].index
         available_stim = set(curr_cond_all_stim) - set(curr_cond_used_stim)
         chosen_stim = np.random.choice(list(available_stim),
                                        n_trials_per_block_per_rate,
