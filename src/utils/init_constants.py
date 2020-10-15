@@ -8,7 +8,7 @@ import sounddevice as sd
 
 
 print(80*"=")
-print("INITIALIZATION")
+print("|| MSM INITIALIZATION")
 print(80*"=")
 
 ### Directory paths
@@ -118,11 +118,11 @@ PATTERN_SMALL_IMG_PATHS = [
 
 ### Dataframe columns
 STIM_COLUMNS = ["stim_type",
-                "target_talker", "target_sentence",
+                "target", "target_pattern",
                 "target_alt_rate", "target_init_position",
-                "masker1_talker", "masker1_sentence",
+                "masker1", "masker1_pattern",
                 "masker1_alt_rate", "masker1_init_position",
-                "masker2_talker", "masker2_sentence",
+                "masker2", "masker2_pattern",
                 "masker2_alt_rate", "masker2_init_position"]
 DATA_COLUMNS = ["run_num", "subject_ID", "task_type",
                 "block_num", "trial_num", "stimulus_ID",

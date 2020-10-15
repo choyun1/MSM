@@ -14,8 +14,7 @@ subject_ID = "AYC"
 task_type = "SOS"
 n_blocks = 5
 n_trials_per_block_per_rate = 4
-conditions = ["co-located", "opposite", 0.5, 2, 4]
-# conditions = ["co-located", "opposite", 0.1, 0.5, 1, 2, 4, 5, 6, 8, 10, 15]
+conditions = ["co-located", "opposite", 0.5, 2, 4, 8] # alt rate
 
 # Set save file path and create data structure
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"

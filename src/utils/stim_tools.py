@@ -71,7 +71,7 @@ def make_tone_pattern(pattern, fs, CF, n_tones, tone_dur, edge_dur):
     return normalize_rms([concat_sounds(tone_sequence)])[0]
 
 
-def make_TP_sequence(n_seqs, seq_len, protected_delta=1,
+def make_TP_sequence(n_seqs, seq_len=5, protected_delta=1,
                      fs=44100, n_tones=8, tone_dur=80e-3, edge_dur=20e-3, gap_dur=100e-3):
     # Choose frequency bands
     if n_seqs >= len(CENTER_FREQS) - 2*protected_delta:
