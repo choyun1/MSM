@@ -25,8 +25,8 @@ elif sys.platform == "win32":
 else:
     raise ValueError("\nunexpected operating system!\nuse 'linux' or 'win32'")
 sys.path.append(str(SIGTOOLS_DIR))
-DATA_DIR = PROJ_DIR/"data"/"pilot_v3"
-STIM_DIR = PROJ_DIR/"assets"/"stimuli"/"pilot_v3"
+DATA_DIR = PROJ_DIR/"data"
+STIM_DIR = PROJ_DIR/"assets"/"stimuli"
 IMGS_DIR = PROJ_DIR/"assets"/"img"
 
 
