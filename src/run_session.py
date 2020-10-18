@@ -11,19 +11,28 @@ from utils.GUI_routines import *
 # Session parameters
 run_num = len([x for x in DATA_DIR.glob("*.csv")])
 subject_ID = "AYC"
-task_type = "SOS"
-n_blocks = 5
-n_trials_per_block_per_rate = 4
-conditions = ["co-located", "opposite", 0.5, 2, 4, 8] # alt rate
+task_type = "SIM"
+n_srcs = 2
+conditions = ["co-located", "plus_minus_90"] # alt rate
+stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
+#
+randomize_within_block = False
+n_blocks = None                         # if randomized within block
+n_trials_per_block_per_condition = None # if randomized within block
+n_trials_per_block = 3      # if NOT randomized within block
+n_blocks_per_condition = 1  # if NOT randomized within block
+run_stim_order = set_stim_order(stim_database, n_srcs, task_type, conditions,
+                                n_blocks,
+                                n_trials_per_block_per_condition,
+                                n_trials_per_block,
+                                n_blocks_per_condition,
+                                randomize_within_block)
 
 # Set save file path and create data structure
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"
 save_path = DATA_DIR/file_name
 run_data = pd.DataFrame(columns=DATA_COLUMNS)
 answer_choices = VERBS + NUMBERS + ADJECTIVES + NOUNS
-# answer_choices = VERBS + NUMBERS + ADJECTIVES + NOUNS + CONJUNCTIONS \
-#                + NAMES + VERBS + NUMBERS + ADJECTIVES + NOUNS
-n_trials_per_block = len(conditions)*n_trials_per_block_per_rate
 
 # Initialize GUI elements
 win = \
@@ -57,10 +66,8 @@ push_button.draw()
 win.flip()
 wait_for_push_button(win, push_button, mouse)
 
-for block_num in range(n_blocks):
-    block_stim_list = set_stimuli_for_block(n_trials_per_block_per_rate,
-                                            conditions, run_data)
-
+n_blocks = len(run_stim_order)
+for block_num, block_stim_order in enumerate(run_stim_order):
     # Set ready screen
     block_ready_txt = "BLOCK {:d} of {:d}\n\nPress NEXT when ready.".format(
                       block_num + 1, n_blocks)
@@ -71,7 +78,9 @@ for block_num in range(n_blocks):
     win.flip()
     wait_for_push_button(win, push_button, mouse)
 
-    for trial_num in range(n_trials_per_block):
+    n_trials = len(block_stim_order)
+    for trial_num, (stim, stim_num, target_pattern_items) \
+    in enumerate(block_stim_order):
         # Display trial number
         trial_txt = "BLOCK {:d}/{:d};\tTRIAL {:d}/{:d}".format(
                      block_num + 1, n_blocks, trial_num + 1, n_trials_per_block)
@@ -81,16 +90,15 @@ for block_num in range(n_blocks):
         win.flip()
 
         # Make and play stimulus
-        stimulus, stimulus_ID, target_sentence_items = block_stim_list[trial_num]
         core.wait(0.25)
-        stimulus.play(blocking=True)
+        stim.play(blocking=True)
 
         # Wait for subject response
         subj_response, correct = \
             do_word_recall_task(win, push_button, mouse, helper_text,
                                 word_submission_queue, word_answer_queue,
                                 word_grid_interface,
-                                target_sentence_items)
+                                target_pattern_items)
         elapsed_time = expt_timer.getTime()
 
         # Save data
@@ -100,14 +108,14 @@ for block_num in range(n_blocks):
              "task_type": task_type,
              "block_num": block_num + 1,
              "trial_num": trial_num + 1,
-             "stimulus_ID": stimulus_ID,
+             "stim_num": stim_num,
              "subj_response": " ".join(subj_response),
              "correct": correct,
              "elapsed_time": elapsed_time},
              ignore_index=True)
         run_data.to_csv(save_path, index=False)
 # End screen
-helper_text.set_text("Run complete! Please see experimenter.")
+helper_text.set_text("Run complete!\n\nPlease see the experimenter.")
 helper_text.draw()
 win.flip()
 wait_for_push_button(win, push_button, mouse)

@@ -84,10 +84,12 @@ def make_TP_sequence(n_seqs, seq_len=5, protected_delta=1,
         if not any(band_differences_from_target <= protected_delta):
             bands_chosen = True
     CFs = CENTER_FREQS[bands_draw]
+    bands = np.array(["band_" + str(band_num) for band_num in bands_draw])
 
     # Choose the patterns
     patterns = np.random.choice(PATTERN_TYPES, (n_seqs, seq_len))
-    patterns[:, 0] = np.random.choice(list(set(PATTERN_TYPES) - set(["CONSTANT"])), n_seqs, replace=False)
+    patterns[:, 0] = np.random.choice(list(set(PATTERN_TYPES) - set(["CONSTANT"])),
+                                      n_seqs, replace=False)
     patterns[0, 0] = "CONSTANT"
 
     # Make the pattern sequences
@@ -101,7 +103,7 @@ def make_TP_sequence(n_seqs, seq_len=5, protected_delta=1,
         temp_list[0::2] = curr_seq_list
         temp_list = [gap] + temp_list + [gap]
         tp_seqs.append(concat_sounds(temp_list))
-    return CFs, patterns, tp_seqs
+    return bands, patterns, tp_seqs
 
 
 def make_circular_sinuisoidal_trajectory(r, elev, init_angle,
@@ -125,41 +127,85 @@ def make_circular_sinuisoidal_trajectory(r, elev, init_angle,
     return rect_coords
 
 
-def set_stimuli_for_block(n_trials_per_block_per_rate, conditions, curr_run_data):
-    stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
-    curr_used_stim = stim_database.iloc[curr_run_data["stimulus_ID"]]
-    stimulus_list = []
+def set_stim_order(stim_database, n_srcs, task_type, conditions,
+                   n_blocks=None,
+                   n_trials_per_block_per_condition=None,
+                   n_trials_per_block=None,
+                   n_blocks_per_condition=None,
+                   randomize_within_block=True):
+    if randomize_within_block:
+        if n_trials_per_block or n_blocks_per_condition:
+            raise ValueError
+        n_trials_per_condition = n_blocks*n_trials_per_block_per_condition
+    else:
+        if n_blocks or n_trials_per_block_per_condition:
+            raise ValueError
+        n_trials_per_condition = n_trials_per_block*n_blocks_per_condition
+
+    temp = pd.DataFrame(columns=["cond", "stim_num", "pattern"])
     for cond in conditions:
         if cond == "co-located":
-            curr_cond_all_stim = stim_database[
-                (stim_database["target_alt_rate"] == 0) &
-                (stim_database["target_init_position"] == 0)].index
-            curr_cond_used_stim = curr_used_stim[
-                (curr_used_stim["target_alt_rate"] == 0) &
-                (curr_used_stim["target_init_position"] == 0)].index
-        elif cond == "opposite":
-            curr_cond_all_stim = stim_database[
-                (stim_database["target_alt_rate"] == 0) &
-                (stim_database["target_init_position"] != 0)].index
-            curr_cond_used_stim = curr_used_stim[
-                (curr_used_stim["target_alt_rate"] == 0) &
-                (curr_used_stim["target_init_position"] != 0)].index
+            cond_subset = \
+                stim_database[(stim_database["n_srcs"] == n_srcs) &
+                              (stim_database["stim_type"] == task_type) &
+                              (stim_database["is_target"]) &
+                              (stim_database["alt_rate"] == 0) &
+                              (stim_database["init_angle"] == 0)].sample(n_trials_per_condition)
+        elif cond == "plus_minus_90":
+            cond_subset = \
+                stim_database[(stim_database["n_srcs"] == n_srcs) &
+                              (stim_database["stim_type"] == task_type) &
+                              (stim_database["is_target"]) &
+                              (stim_database["alt_rate"] == 0) &
+                              (stim_database["init_angle"] != 0)].sample(n_trials_per_condition)
         else:
-            curr_cond_all_stim = stim_database[
-                stim_database["target_alt_rate"] == cond].index
-            curr_cond_used_stim = curr_used_stim[
-                curr_used_stim["target_alt_rate"] == cond].index
-        available_stim = set(curr_cond_all_stim) - set(curr_cond_used_stim)
-        chosen_stim = np.random.choice(list(available_stim),
-                                       n_trials_per_block_per_rate,
-                                       replace=False)
+            cond_subset = \
+                stim_database[(stim_database["n_srcs"] == n_srcs) &
+                              (stim_database["stim_type"] == task_type) &
+                              (stim_database["is_target"]) &
+                              (stim_database["alt_rate"] == cond)].sample(n_trials_per_condition)
+        cond_subset = cond_subset[["stim_num", "pattern"]]
+        cond_subset.insert(0, "cond", len(cond_subset)*[str(cond)])
+        temp = temp.append(cond_subset)
 
-        # Add to stimulus list
-        for stim_ID in chosen_stim:
-            stim_path = STIM_DIR/("stim_" + str(stim_ID).zfill(5) + ".wav")
-            stimulus = SoundLoader(stim_path)
-            target_sentence = stim_database.target_sentence[stim_ID]
-            target_sentence_items = target_sentence.split(" ")
-            stimulus_list.append((stimulus, stim_ID, target_sentence_items))
-    np.random.shuffle(stimulus_list)
-    return stimulus_list
+    # Set stimulus order - strategy is to randomly draw from temp
+    # and remove the drawn samples
+    run_stim_order = []
+    if randomize_within_block:
+        for block_num in range(n_blocks):
+            curr_block = []
+            for cond in conditions:
+                curr_cond_df = temp[temp["cond"] == cond]
+                sampled = curr_cond_df.sample(n_trials_per_block_per_condition, replace=False)
+                temp = temp.drop(sampled.index) # removed the drawn rows
+                sampled_stim_nums = sampled["stim_num"].values.astype(int)
+                sampled_stim_patterns = sampled["pattern"].values
+                sampled_stim_patterns = [pattern.split(" ") for pattern in sampled_stim_patterns]
+                sampled_stims = []
+                for stim_num in sampled_stim_nums:
+                    stim_path = STIM_DIR/("stim_" + str(stim_num).zfill(5) + ".wav")
+                    stimulus = SoundLoader(stim_path)
+                    sampled_stims.append(stimulus)
+                curr_block += list(zip(sampled_stims, sampled_stim_nums, sampled_stim_patterns))
+            np.random.shuffle(curr_block)
+            run_stim_order.append(curr_block)
+    else: # if not randomized within block
+        for _ in range(n_blocks_per_condition):
+            np.random.shuffle(conditions)
+            for cond in conditions:
+                curr_block = []
+                curr_cond_df = temp[temp["cond"] == cond]
+                sampled = curr_cond_df.sample(n_trials_per_block, replace=False)
+                temp = temp.drop(sampled.index) # removed the drawn rows
+                sampled_stim_nums = sampled["stim_num"].values.astype(int)
+                sampled_stim_patterns = sampled["pattern"].values
+                sampled_stim_patterns = [pattern.split(" ") for pattern in sampled_stim_patterns]
+                sampled_stims = []
+                for stim_num in sampled_stim_nums:
+                    stim_path = STIM_DIR/("stim_" + str(stim_num).zfill(5) + ".wav")
+                    stimulus = SoundLoader(stim_path)
+                    sampled_stims.append(stimulus)
+                curr_block = list(zip(sampled_stims, sampled_stim_nums, sampled_stim_patterns))
+                np.random.shuffle(curr_block)
+                run_stim_order.append(curr_block)
+    return run_stim_order

@@ -25,8 +25,8 @@ elif sys.platform == "win32":
 else:
     raise ValueError("\nunexpected operating system!\nuse 'linux' or 'win32'")
 sys.path.append(str(SIGTOOLS_DIR))
-DATA_DIR = PROJ_DIR/"data"
-STIM_DIR = PROJ_DIR/"assets"/"stimuli"
+DATA_DIR = PROJ_DIR/"data"/"pilot_v3"
+STIM_DIR = PROJ_DIR/"assets"/"stimuli"/"pilot_v3"
 IMGS_DIR = PROJ_DIR/"assets"/"img"
 
 
@@ -117,15 +117,11 @@ PATTERN_SMALL_IMG_PATHS = [
 
 
 ### Dataframe columns
-STIM_COLUMNS = ["stim_type",
-                "target", "target_pattern",
-                "target_alt_rate", "target_init_position",
-                "masker1", "masker1_pattern",
-                "masker1_alt_rate", "masker1_init_position",
-                "masker2", "masker2_pattern",
-                "masker2_alt_rate", "masker2_init_position"]
+STIM_COLUMNS = ["stim_num", "stim_type", "n_srcs",
+                "src", "is_target", "pattern",
+                "alt_rate", "init_angle"]
 DATA_COLUMNS = ["run_num", "subject_ID", "task_type",
-                "block_num", "trial_num", "stimulus_ID",
+                "block_num", "trial_num", "stim_num",
                 "subj_response", "correct",
                 "elapsed_time"]
 

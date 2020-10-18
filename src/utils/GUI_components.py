@@ -17,6 +17,160 @@ class CustomMouse(event.Mouse):
             return False
 
 
+class TonePatternQueue:
+    def __init__(self, win, n_slots, y_pos):
+        gap = 2
+        width = 5
+        borders = [
+            visual.Rect(
+                win,
+                width=5.5,
+                height=2,
+                lineColor=(0, 255, 0),
+                lineColorSpace="rgb255",
+                fillColor=(0, 255, 0),
+                fillColorSpace="rgb255",
+                opacity=0.,
+                pos=( -n_slots*width/2 + i*(gap + width), y_pos )
+            )
+            for i in range(n_slots)
+        ]
+        imgs = [
+            visual.ImageStim(
+                win,
+                image=None,
+                pos=( -n_slots*width/2 + i*(gap + width), y_pos )
+            )
+            for i in range(n_slots)
+        ]
+
+        self.win = win
+        self.borders = borders
+        self.imgs = imgs
+        self.patterns = []
+        self.curr_queue_pos = 0
+
+    def insert(self, pattern_num):
+        """inserts a tone pattern always at the end"""
+        if len(self) < len(self.imgs):
+            curr_queue_pos = self.curr_queue_pos
+            self.imgs[curr_queue_pos].image = PATTERN_SMALL_IMG_PATHS[pattern_num]
+            self.patterns.append(PATTERN_TYPES[pattern_num])
+            self.curr_queue_pos += 1
+
+    def pop(self, position):
+        ### TODO: There's a bug in the popping capability!
+        """pops a tone pattern from any position"""
+        for idx in range(position, len(self.imgs) - 1):
+            self.imgs[idx].image = self.imgs[idx + 1].image
+        self.imgs[-1].image = None
+        self.patterns.pop(position)
+        self.curr_queue_pos = max(self.curr_queue_pos - 1, 0)
+
+    def reset(self):
+        self.curr_queue_pos = 0
+        self.patterns = []
+        for img in self.imgs:
+            img.image = None
+
+    def toggle_border(self, i):
+        if self.borders[i].opacity == 0:
+            self.borders[i].opacity = 1
+        elif self.tone_pattern_borders[i].opacity == 1:
+            self.tone_pattern_borders[i].opacity = 0
+
+    def set_border_color(self, i, color):
+        self.borders[i].color = color
+
+    def reset_borders(self):
+        for border in self.borders:
+            border.opacity = 0
+            border.color = (0, 0, 0)
+
+    def draw(self):
+        for border in self.borders:
+            border.draw()
+        for img in self.imgs:
+            img.draw()
+
+    def __len__(self):
+        return sum(img.image is not None for img in self.imgs)
+
+
+# class TonePatternInterface:
+#     def __init__(self, win, y_offset=1):
+#         tone_pattern_borders = [
+#             visual.Rect(
+#                 win,
+#                 width=11.1,
+#                 height=4.1,
+#                 lineColor=(0, 0, 0),
+#                 lineColorSpace="rgb255",
+#                 fillColor=(0, 0, 0),
+#                 fillColorSpace="rgb255",
+#                 opacity=0.,
+#                 pos=(-12 + 12*(i%3), -6*(i//3) + y_offset))
+#             for i in range(len(PATTERN_TYPES))
+#         ]
+#         tone_pattern_grid = [
+#             visual.ImageStim(
+#                 win,
+#                 image=PATTERN_IMG_PATHS[i],
+#                 pos=(-12 + 12*(i%3), -6*(i//3) + y_offset))
+#             for i in range(len(PATTERN_TYPES))
+#         ]
+#         tone_pattern_labels = [
+#             visual.TextStim(
+#                 win,
+#                 text=pattern_name,
+#                 color=(0, 0, 0),
+#                 colorSpace="rgb255",
+#                 height=0.8,
+#                 pos=(-12 + 12*(i%3), -2.5 - 6*(i//3) + y_offset))
+#             for i, pattern_name in enumerate(PATTERN_TYPES)
+#         ]
+#         self.win = win
+#         self.tone_pattern_borders = tone_pattern_borders
+#         self.tone_pattern_grid = tone_pattern_grid
+#         self.tone_pattern_labels = tone_pattern_labels
+#         self.highlighted_patterns = 0
+#         self.highlighted_pattern_idxs = set()
+#
+#     def toggle_border(self, i):
+#         if self.tone_pattern_borders[i].opacity == 0:
+#             self.tone_pattern_borders[i].opacity = 1
+#             self.highlighted_patterns += 1
+#             self.highlighted_pattern_idxs.add(i)
+#         elif self.tone_pattern_borders[i].opacity == 1:
+#             self.tone_pattern_borders[i].opacity = 0
+#             self.highlighted_patterns -= 1
+#             self.highlighted_pattern_idxs.remove(i)
+#
+#     def set_border_color(self, i, color):
+#         self.tone_pattern_borders[i].color = color
+#
+#     def count_highlighted(self):
+#         return self.highlighted_patterns
+#
+#     def highlighted_idxs(self):
+#         return sorted(list(self.highlighted_pattern_idxs))
+#
+#     def reset_borders(self):
+#         for border in self.tone_pattern_borders:
+#             border.opacity = 0
+#             border.color = (0, 0, 0)
+#         self.highlighted_patterns = 0
+#         self.highlighted_pattern_idxs = set()
+#
+#     def draw(self):
+#         for tone_pattern_border in self.tone_pattern_borders:
+#             tone_pattern_border.draw()
+#         for tone_pattern_img in self.tone_pattern_grid:
+#             tone_pattern_img.draw()
+#         for tone_pattern_label in self.tone_pattern_labels:
+#             tone_pattern_label.draw()
+
+
 class WordQueue:
     def __init__(self, win, n_slots, y_pos, gap, width, height):
         boxes = [
@@ -136,6 +290,80 @@ class WordGridInterface:
             box.draw()
         for word in self.word_labels:
             word.draw()
+
+
+# class TonePatternInterface:
+#     def __init__(self, win, y_offset=1):
+#         tone_pattern_borders = [
+#             visual.Rect(
+#                 win,
+#                 width=11.1,
+#                 height=4.1,
+#                 lineColor=(0, 0, 0),
+#                 lineColorSpace="rgb255",
+#                 fillColor=(0, 0, 0),
+#                 fillColorSpace="rgb255",
+#                 opacity=0.,
+#                 pos=(-12 + 12*(i%3), -6*(i//3) + y_offset))
+#             for i in range(len(PATTERN_TYPES))
+#         ]
+#         tone_pattern_grid = [
+#             visual.ImageStim(
+#                 win,
+#                 image=PATTERN_IMG_PATHS[i],
+#                 pos=(-12 + 12*(i%3), -6*(i//3) + y_offset))
+#             for i in range(len(PATTERN_TYPES))
+#         ]
+#         tone_pattern_labels = [
+#             visual.TextStim(
+#                 win,
+#                 text=pattern_name,
+#                 color=(0, 0, 0),
+#                 colorSpace="rgb255",
+#                 height=0.8,
+#                 pos=(-12 + 12*(i%3), -2.5 - 6*(i//3) + y_offset))
+#             for i, pattern_name in enumerate(PATTERN_TYPES)
+#         ]
+#         self.win = win
+#         self.tone_pattern_borders = tone_pattern_borders
+#         self.tone_pattern_grid = tone_pattern_grid
+#         self.tone_pattern_labels = tone_pattern_labels
+#         self.highlighted_patterns = 0
+#         self.highlighted_pattern_idxs = set()
+#
+#     def toggle_border(self, i):
+#         if self.tone_pattern_borders[i].opacity == 0:
+#             self.tone_pattern_borders[i].opacity = 1
+#             self.highlighted_patterns += 1
+#             self.highlighted_pattern_idxs.add(i)
+#         elif self.tone_pattern_borders[i].opacity == 1:
+#             self.tone_pattern_borders[i].opacity = 0
+#             self.highlighted_patterns -= 1
+#             self.highlighted_pattern_idxs.remove(i)
+#
+#     def set_border_color(self, i, color):
+#         self.tone_pattern_borders[i].color = color
+#
+#     def count_highlighted(self):
+#         return self.highlighted_patterns
+#
+#     def highlighted_idxs(self):
+#         return sorted(list(self.highlighted_pattern_idxs))
+#
+#     def reset_borders(self):
+#         for border in self.tone_pattern_borders:
+#             border.opacity = 0
+#             border.color = (0, 0, 0)
+#         self.highlighted_patterns = 0
+#         self.highlighted_pattern_idxs = set()
+#
+#     def draw(self):
+#         for tone_pattern_border in self.tone_pattern_borders:
+#             tone_pattern_border.draw()
+#         for tone_pattern_img in self.tone_pattern_grid:
+#             tone_pattern_img.draw()
+#         for tone_pattern_label in self.tone_pattern_labels:
+#             tone_pattern_label.draw()
 
 
 class PushButton:
