@@ -12,21 +12,27 @@ from utils.GUI_routines import *
 run_num = len([x for x in DATA_DIR.glob("*.csv")])
 subject_ID = "AYC"
 task_type = "SIM"
-n_srcs = 2
-conditions = ["co-located", "plus_minus_90"] # alt rate
+n_srcs = 3
+conditions = ["co-located", "plus_minus_90", 0.5, 2, 4, 8] # alt rate
 stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
-#
-randomize_within_block = False
-n_blocks = None                         # if randomized within block
-n_trials_per_block_per_condition = None # if randomized within block
-n_trials_per_block = 3      # if NOT randomized within block
-n_blocks_per_condition = 1  # if NOT randomized within block
-run_stim_order = set_stim_order(stim_database, n_srcs, task_type, conditions,
+
+# Check that the specified conditions are in the stimulus database
+validate_parameters(stim_database, task_type, n_srcs, conditions)
+
+# Blocking parameters
+randomize_within_block = True
+n_blocks = 10                         # if randomized within block
+n_trials_per_block_per_condition = 2 # if randomized within block
+n_trials_per_block = None      # if NOT randomized within block
+n_blocks_per_condition = None   # if NOT randomized within block
+run_stim_order = set_stim_order(stim_database, task_type, n_srcs, conditions,
                                 n_blocks,
                                 n_trials_per_block_per_condition,
                                 n_trials_per_block,
                                 n_blocks_per_condition,
                                 randomize_within_block)
+if randomize_within_block:
+    n_trials_per_block = n_trials_per_block_per_condition*len(conditions)
 
 # Set save file path and create data structure
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"
@@ -45,8 +51,8 @@ win = \
 push_button = PushButton(win)
 mouse = CustomMouse(win=win)
 helper_text = SupportingText(win)
-word_submission_queue = WordQueue(win, n_slots=11, y_pos=7.5, gap=1, width=3, height=1)
-word_answer_queue     = WordQueue(win, n_slots=11, y_pos=5,   gap=1, width=3, height=1)
+word_submission_queue = WordQueue(win, n_slots=5, gap=1, width=3, height=1, y_pos=7.5)
+word_answer_queue     = WordQueue(win, n_slots=5, gap=1, width=3, height=1, y_pos=5)
 word_grid_interface   = WordGridInterface(win, column_len=len(VERBS),
                                           words_in_grid=answer_choices,
                                           x_offset=-15.5, y_offset=3.5,
@@ -64,7 +70,7 @@ helper_text.draw()
 push_button.set_text("NEXT")
 push_button.draw()
 win.flip()
-wait_for_push_button(win, push_button, mouse)
+wait_for_push_button(win, mouse, push_button)
 
 n_blocks = len(run_stim_order)
 for block_num, block_stim_order in enumerate(run_stim_order):
@@ -76,7 +82,7 @@ for block_num, block_stim_order in enumerate(run_stim_order):
     push_button.draw()
     push_button.set_text("NEXT")
     win.flip()
-    wait_for_push_button(win, push_button, mouse)
+    wait_for_push_button(win, mouse, push_button)
 
     n_trials = len(block_stim_order)
     for trial_num, (stim, stim_num, target_pattern_items) \
@@ -95,10 +101,9 @@ for block_num, block_stim_order in enumerate(run_stim_order):
 
         # Wait for subject response
         subj_response, correct = \
-            do_word_recall_task(win, push_button, mouse, helper_text,
-                                word_submission_queue, word_answer_queue,
-                                word_grid_interface,
-                                target_pattern_items)
+            do_recall_task(task_type, win, mouse, helper_text, push_button,
+                           word_submission_queue, word_answer_queue,
+                           word_grid_interface, target_pattern_items)
         elapsed_time = expt_timer.getTime()
 
         # Save data
@@ -118,7 +123,7 @@ for block_num, block_stim_order in enumerate(run_stim_order):
 helper_text.set_text("Run complete!\n\nPlease see the experimenter.")
 helper_text.draw()
 win.flip()
-wait_for_push_button(win, push_button, mouse)
+wait_for_push_button(win, mouse, push_button)
 ################################################################################
 # END EXPT
 ################################################################################

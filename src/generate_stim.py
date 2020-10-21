@@ -6,11 +6,11 @@ from utils.stim_tools import *
 ################################################################################
 # SYNTHESIS PARAMETERS
 ################################################################################
-stim_types = ["SIM", "TIM"]
+stim_types = ["TIM"]
 conditions = ["co-located", "plus_minus_90", 0.5, 2, 4, 8] # alt rate
 n_srcs_list = [2, 3]
-n_stim = 200
-spatial_resolution = 2 # average samples per degree over the whole trajectory
+n_stim = 20
+spatial_resolution = 4 # average samples per degree over the whole trajectory
 level = 80
 r = 100 # cm
 elev = 0

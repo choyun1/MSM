@@ -67,12 +67,13 @@ def make_tone_pattern(pattern, fs, CF, n_tones, tone_dur, edge_dur):
     # Generate the target pattern
     freq_sequence = [(1 + band_value/100)*CF
                      for band_value in band_value_sequence]
-    tone_sequence = [ramp_edges(PureTone(tone_dur, fs, freq), edge_dur) for freq in freq_sequence]
+    tone_sequence = [ramp_edges(PureTone(tone_dur, fs, freq), edge_dur)
+                     for freq in freq_sequence]
     return normalize_rms([concat_sounds(tone_sequence)])[0]
 
 
-def make_TP_sequence(n_seqs, seq_len=5, protected_delta=1,
-                     fs=44100, n_tones=8, tone_dur=80e-3, edge_dur=20e-3, gap_dur=100e-3):
+def make_TP_sequence(n_seqs, seq_len=5, protected_delta=1, fs=44100, n_tones=8,
+                     tone_dur=80e-3, edge_dur=20e-3, gap_dur=100e-3):
     # Choose frequency bands
     if n_seqs >= len(CENTER_FREQS) - 2*protected_delta:
         raise ValueError("too many pattern sequences requested")
@@ -127,7 +128,7 @@ def make_circular_sinuisoidal_trajectory(r, elev, init_angle,
     return rect_coords
 
 
-def set_stim_order(stim_database, n_srcs, task_type, conditions,
+def set_stim_order(stim_database, task_type, n_srcs, conditions,
                    n_blocks=None,
                    n_trials_per_block_per_condition=None,
                    n_trials_per_block=None,
@@ -142,30 +143,36 @@ def set_stim_order(stim_database, n_srcs, task_type, conditions,
             raise ValueError
         n_trials_per_condition = n_trials_per_block*n_blocks_per_condition
 
+    # Find all stimuli that satisfy current conditions
     temp = pd.DataFrame(columns=["cond", "stim_num", "pattern"])
     for cond in conditions:
-        if cond == "co-located":
-            cond_subset = \
-                stim_database[(stim_database["n_srcs"] == n_srcs) &
-                              (stim_database["stim_type"] == task_type) &
-                              (stim_database["is_target"]) &
-                              (stim_database["alt_rate"] == 0) &
-                              (stim_database["init_angle"] == 0)].sample(n_trials_per_condition)
-        elif cond == "plus_minus_90":
-            cond_subset = \
-                stim_database[(stim_database["n_srcs"] == n_srcs) &
-                              (stim_database["stim_type"] == task_type) &
-                              (stim_database["is_target"]) &
-                              (stim_database["alt_rate"] == 0) &
-                              (stim_database["init_angle"] != 0)].sample(n_trials_per_condition)
-        else:
-            cond_subset = \
-                stim_database[(stim_database["n_srcs"] == n_srcs) &
-                              (stim_database["stim_type"] == task_type) &
-                              (stim_database["is_target"]) &
-                              (stim_database["alt_rate"] == cond)].sample(n_trials_per_condition)
+        try:
+            if cond == "co-located":
+                cond_subset = \
+                    stim_database[(stim_database["stim_type"] == task_type) &
+                                  (stim_database["n_srcs"] == n_srcs) &
+                                  (stim_database["is_target"]) &
+                                  (stim_database["alt_rate"] == 0) &
+                                  (stim_database["init_angle"] == 0)].sample(n_trials_per_condition)
+            elif cond == "plus_minus_90":
+                cond_subset = \
+                    stim_database[(stim_database["stim_type"] == task_type) &
+                                  (stim_database["n_srcs"] == n_srcs) &
+                                  (stim_database["is_target"]) &
+                                  (stim_database["alt_rate"] == 0) &
+                                  (stim_database["init_angle"] != 0)].sample(n_trials_per_condition)
+            else:
+                cond_subset = \
+                    stim_database[(stim_database["stim_type"] == task_type) &
+                                  (stim_database["n_srcs"] == n_srcs) &
+                                  (stim_database["is_target"]) &
+                                  (stim_database["alt_rate"] == cond)].sample(n_trials_per_condition)
+        except ValueError:
+            exception_str = ("insufficient number of unique stimuli for the "
+                             "specified number of trials")
+            raise ValueError(exception_str) from None
         cond_subset = cond_subset[["stim_num", "pattern"]]
-        cond_subset.insert(0, "cond", len(cond_subset)*[str(cond)])
+        cond_subset.insert(0, "cond", len(cond_subset)*[cond])
         temp = temp.append(cond_subset)
 
     # Set stimulus order - strategy is to randomly draw from temp
@@ -176,17 +183,21 @@ def set_stim_order(stim_database, n_srcs, task_type, conditions,
             curr_block = []
             for cond in conditions:
                 curr_cond_df = temp[temp["cond"] == cond]
-                sampled = curr_cond_df.sample(n_trials_per_block_per_condition, replace=False)
+                sampled = curr_cond_df.sample(n_trials_per_block_per_condition,
+                                              replace=False)
                 temp = temp.drop(sampled.index) # removed the drawn rows
                 sampled_stim_nums = sampled["stim_num"].values.astype(int)
                 sampled_stim_patterns = sampled["pattern"].values
-                sampled_stim_patterns = [pattern.split(" ") for pattern in sampled_stim_patterns]
+                sampled_stim_patterns = [pattern.split(" ")
+                                         for pattern in sampled_stim_patterns]
                 sampled_stims = []
                 for stim_num in sampled_stim_nums:
                     stim_path = STIM_DIR/("stim_" + str(stim_num).zfill(5) + ".wav")
                     stimulus = SoundLoader(stim_path)
                     sampled_stims.append(stimulus)
-                curr_block += list(zip(sampled_stims, sampled_stim_nums, sampled_stim_patterns))
+                curr_block += list(zip(sampled_stims,
+                                       sampled_stim_nums,
+                                       sampled_stim_patterns))
             np.random.shuffle(curr_block)
             run_stim_order.append(curr_block)
     else: # if not randomized within block
@@ -195,17 +206,55 @@ def set_stim_order(stim_database, n_srcs, task_type, conditions,
             for cond in conditions:
                 curr_block = []
                 curr_cond_df = temp[temp["cond"] == cond]
-                sampled = curr_cond_df.sample(n_trials_per_block, replace=False)
+                sampled = curr_cond_df.sample(n_trials_per_block,
+                                              replace=False)
                 temp = temp.drop(sampled.index) # removed the drawn rows
                 sampled_stim_nums = sampled["stim_num"].values.astype(int)
                 sampled_stim_patterns = sampled["pattern"].values
-                sampled_stim_patterns = [pattern.split(" ") for pattern in sampled_stim_patterns]
+                sampled_stim_patterns = [pattern.split(" ")
+                                         for pattern in sampled_stim_patterns]
                 sampled_stims = []
                 for stim_num in sampled_stim_nums:
                     stim_path = STIM_DIR/("stim_" + str(stim_num).zfill(5) + ".wav")
                     stimulus = SoundLoader(stim_path)
                     sampled_stims.append(stimulus)
-                curr_block = list(zip(sampled_stims, sampled_stim_nums, sampled_stim_patterns))
+                curr_block = list(zip(sampled_stims,
+                                      sampled_stim_nums,
+                                      sampled_stim_patterns))
                 np.random.shuffle(curr_block)
                 run_stim_order.append(curr_block)
     return run_stim_order
+
+
+def validate_parameters(stim_database, task_type, n_srcs, conditions):
+    for cond in conditions:
+        if cond == "co-located":
+            curr_cond_df = \
+                stim_database[(stim_database["stim_type"] == task_type) &
+                              (stim_database["n_srcs"] == n_srcs) &
+                              (stim_database["is_target"] == True) &
+                              (stim_database["alt_rate"] == 0) &
+                              (stim_database["init_angle"] == 0)]
+        elif cond == "plus_minus_90":
+            curr_cond_df = \
+                stim_database[(stim_database["stim_type"] == task_type) &
+                              (stim_database["n_srcs"] == n_srcs) &
+                              (stim_database["is_target"] == True) &
+                              (stim_database["alt_rate"] == 0) &
+                              (stim_database["init_angle"] != 0)]
+        else:
+            curr_cond_df = \
+                stim_database[(stim_database["stim_type"] == task_type) &
+                              (stim_database["n_srcs"] == n_srcs) &
+                              (stim_database["is_target"] == True) &
+                              (stim_database["alt_rate"] == cond)]
+        if len(curr_cond_df) == 0:
+            if type(cond) == str:
+                exception_str = ("no stimulus with combination {:s}, "
+                                 "{:d} sources, and {:s} available").format(
+                                 task_type, n_srcs, cond)
+            else:
+                exception_str = ("no stimulus with combination {:s}, "
+                                 "{:d} sources, and {:.1f} Hz available").format(
+                                 task_type, n_srcs, cond)
+            raise ValueError(exception_str)
