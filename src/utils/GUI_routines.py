@@ -75,7 +75,7 @@ def grid_logic(win, mouse, push_button, helper_text, n_slots,
             push_button.set_pressed()
 
 
-def do_recall_task(task_type, win, mouse, helper_text, push_button,
+def do_recall_task(stim_type, win, mouse, helper_text, push_button,
                    submission_queue, answer_queue,
                    grid_interface, target_patterns):
     # Reset GUI elements
@@ -92,12 +92,12 @@ def do_recall_task(task_type, win, mouse, helper_text, push_button,
     for item in target_patterns:
         answer_queue.insert(item)
     # Always insert constant pattern into the submission queue
-    if task_type == "SIM":
+    if stim_type == "SEM" or stim_type == "SIM":
         submission_queue.insert("SUE")
-    elif task_type == "TIM":
+    elif stim_type == "TIM":
         submission_queue.insert(0)
     else:
-        raise ValueError("invalid task_type; select 'SIM' or 'TIM'")
+        raise ValueError("invalid stim_type; select 'SIM' or 'TIM'")
 
     n_slots = len(target_patterns)
     grid_logic(win, mouse, push_button, helper_text, n_slots,

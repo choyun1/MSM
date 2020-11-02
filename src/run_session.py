@@ -10,29 +10,42 @@ from utils.GUI_routines import *
 ################################################################################
 # Session parameters
 run_num = len([x for x in DATA_DIR.glob("*.csv")])
-subject_ID = "AYC"
-task_type = "SIM"
-n_srcs = 3
-conditions = ["co-located", "plus_minus_90", 0.5, 2, 4, 8] # alt rate
 stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
+subject_ID = "AYC"
+n_blocks_per_cond = 2
+n_trials_per_block = 10
+curr_expt = n_blocks_per_cond*EXPT_1_1_1
+np.random.shuffle(curr_expt)
+stim_type = curr_expt[0].stim_type
+
+all_block_list = []
+for condition in curr_expt:
+    curr_block_list = choose_stim(stim_database, all_block_list,
+                                  condition, n_trials_per_block)
+    all_block_list.append(curr_block_list)
+run_stim_order = all_block_list
+
+# stim_type = "SEM"
+# conditions = [(0.5, 0.5), (1, 1), (2, 2), (5, 5)]
+# stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
 
 # Check that the specified conditions are in the stimulus database
-validate_parameters(stim_database, task_type, n_srcs, conditions)
+# validate_parameters(stim_database, task_type, n_srcs, conditions)
 
 # Blocking parameters
-randomize_within_block = True
-n_blocks = 10                         # if randomized within block
-n_trials_per_block_per_condition = 2 # if randomized within block
-n_trials_per_block = None      # if NOT randomized within block
-n_blocks_per_condition = None   # if NOT randomized within block
-run_stim_order = set_stim_order(stim_database, task_type, n_srcs, conditions,
-                                n_blocks,
-                                n_trials_per_block_per_condition,
-                                n_trials_per_block,
-                                n_blocks_per_condition,
-                                randomize_within_block)
-if randomize_within_block:
-    n_trials_per_block = n_trials_per_block_per_condition*len(conditions)
+# randomize_within_block = True
+# n_blocks = 10                         # if randomized within block
+# n_trials_per_block_per_condition = 2 # if randomized within block
+# n_trials_per_block = None      # if NOT randomized within block
+# n_blocks_per_condition = None   # if NOT randomized within block
+# run_stim_order = set_stim_order(stim_database, task_type, n_srcs, conditions,
+#                                 n_blocks,
+#                                 n_trials_per_block_per_condition,
+#                                 n_trials_per_block,
+#                                 n_blocks_per_condition,
+#                                 randomize_within_block)
+# if randomize_within_block:
+#     n_trials_per_block = n_trials_per_block_per_condition*len(conditions)
 
 # Set save file path and create data structure
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"
@@ -101,7 +114,7 @@ for block_num, block_stim_order in enumerate(run_stim_order):
 
         # Wait for subject response
         subj_response, correct = \
-            do_recall_task(task_type, win, mouse, helper_text, push_button,
+            do_recall_task(stim_type, win, mouse, helper_text, push_button,
                            word_submission_queue, word_answer_queue,
                            word_grid_interface, target_pattern_items)
         elapsed_time = expt_timer.getTime()
@@ -110,7 +123,7 @@ for block_num, block_stim_order in enumerate(run_stim_order):
         run_data = run_data.append(
             {"run_num": run_num,
              "subject_ID": subject_ID,
-             "task_type": task_type,
+             "stim_type": stim_type,
              "block_num": block_num + 1,
              "trial_num": trial_num + 1,
              "stim_num": stim_num,

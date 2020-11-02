@@ -6,13 +6,15 @@ from utils.stim_tools import *
 ################################################################################
 # SYNTHESIS PARAMETERS
 ################################################################################
-stim_types = ["TIM"]
-conditions = ["co-located", "plus_minus_90", 0.5, 2, 4, 8] # alt rate
-n_srcs_list = [2, 3]
-n_stim = 20
-spatial_resolution = 4 # average samples per degree over the whole trajectory
+n_stim = 100
+# stim_type = "SEM"
+# TMR = -25
+stim_type = "SIM"
+TMR = 0
+alt_rates = [0.5, 1, 2, 5]
+spatial_resolution = 2 # average samples per degree over the whole trajectory
 level = 80
-r = 100 # cm
+r = 100
 elev = 0
 
 # Load stimulus database
@@ -26,70 +28,59 @@ except FileNotFoundError:
 ################################################################################
 # SYNTHESIS ROUTINE
 ################################################################################
-for stim_type in stim_types:
-    for n_srcs in n_srcs_list:
-        for cond in conditions:
-            if cond == "co-located" or cond == "plus_minus_90":
-                print("\nSynthesizing {:s} {:s} stimuli...".format(stim_type, cond))
-                alt_rates = [0 for _ in range(n_srcs)]
-            else:
-                print("\nSynthesizing {:s} {:.1f} Hz stimuli...".format(stim_type, cond))
-                alt_rates = [cond for _ in range(n_srcs)]
+for rate in alt_rates:
+    print("\nSynthesizing {:s} {:.1f} Hz stimuli...".format(stim_type, rate))
+    for _ in progress_bar(range(n_stim)):
+        rates = [rate, 0]
 
-            for i in progress_bar(range(n_stim)):
-                # Make sound patterns
-                if stim_type == "SIM":
-                    srcs, patterns, snds = make_sentence(n_srcs)
-                elif stim_type == "TIM":
-                    srcs, patterns, snds = make_TP_sequence(n_srcs)
-                else:
-                    raise ValueError("invalid stim_type; use 'SIM' or 'TIM'")
-                patterns = [" ".join(patterns[i, :]).upper() for i in range(n_srcs)]
-                snds = center_sounds(snds)
-                snds = [snd.make_binaural() for snd in snds]
-                is_target = [False for _ in range(n_srcs)]
-                is_target[0] = True
+        if stim_type == "SEM":
+            srcs, patterns, snds = make_sentence(2)
+            patterns = [" ".join(patterns[i, :]).upper() for i in range(len(snds))]
+            srcs[1] = "GN"
+            patterns[1] = ""
+            snds[1] = ramp_edges(GaussianNoise(len(snds[0])/snds[0].fs, snds[0].fs), 25e-3)
+        elif stim_type == "SIM":
+            srcs, patterns, snds = make_sentence(2)
+            patterns = [" ".join(patterns[i, :]).upper() for i in range(len(snds))]
+        else:
+            raise ValueError("invalid stim_type; choose 'SEM' or 'SIM'")
+        is_target = [True, False]
+        snds = zeropad_sounds(snds)
+        snds = normalize_rms(snds)
+        snds = [snd.make_binaural() for snd in snds]
 
-                # Create trajectories
-                if cond == "co-located":
-                    init_angles = np.zeros(n_srcs)
-                    trajs = np.array([hcc_to_rect(r, 0, init_angles[i])
-                                      for i in range(n_srcs)]).reshape(n_srcs, -1, 3)
-                elif cond == "plus_minus_90":
-                    init_angles = np.zeros(n_srcs)
-                    init_angles[0] = 90*np.random.choice([-1., 1.])
-                    for i in range(1, n_srcs):
-                        init_angles[i] = (-1)**i*init_angles[0]
-                    trajs = np.array([hcc_to_rect(r, 0, init_angles[i])
-                                      for i in range(n_srcs)]).reshape(n_srcs, -1, 3)
-                else:
-                    init_angles = np.zeros(n_srcs)
-                    init_angles[0] = np.random.choice([-1., 1.])*90
-                    for i in range(1, n_srcs):
-                        init_angles[i] = (-1)**i*init_angles[0]
-                    traj_dur = len(snds[0])/snds[0].fs
-                    trajs = np.array( \
-                        [make_circular_sinuisoidal_trajectory(r, elev, init_angles[i],
-                                                              traj_dur, alt_rates[i],
-                                                              spatial_resolution)
-                         for i in range(n_srcs)])
+        # target_init_angle = 180*(np.random.rand(1)[0] - 0.5)
+        # masker_init_angle = 180*(np.random.rand(1)[0] - 0.5)
+        target_init_angle = 90*np.random.choice([-1, 1])
+        masker_init_angle = 0
+        init_angles = [target_init_angle, masker_init_angle]
 
-                # Synthesize moving sound
-                moved_snds = [move_sound(trajs[i], snds[i]) for i in range(n_srcs)]
-                combined = sum(moved_snds)
-                stimulus = normalize_rms([combined])[0] + compute_attenuation(level)
+        target_init_dir_R = np.random.choice([True, False])
+        # masker_init_dir_R = np.random.choice([True, False])
+        masker_init_dir_R = not target_init_dir_R
+        init_dir_Rs = [target_init_dir_R, masker_init_dir_R]
 
-                # Save stimulus and stimulus information
-                stim_fname = "stim_" + str(stim_num).zfill(5) + ".wav"
-                stimulus.save(STIM_DIR/stim_fname)
-                stim_database = stim_database.append( \
-                    [{"stim_num": stim_num, "stim_type": stim_type, "n_srcs": n_srcs,
-                      "src": srcs[i], "is_target": is_target[i], "pattern": patterns[i],
-                      "alt_rate": alt_rates[i], "init_angle": init_angles[i]}
-                     for i in range(n_srcs)],
-                    ignore_index=True)
-                stim_database.to_csv(STIM_DIR/"stimulus_database.csv", index=False)
-                stim_num += 1
+        traj_dur = len(snds[0])/snds[0].fs
+        target_traj = make_circular_sinuisoidal_trajectory(r, elev, target_init_angle, target_init_dir_R, traj_dur, rates[0], spatial_resolution)
+        masker_traj = make_circular_sinuisoidal_trajectory(r, elev, masker_init_angle, masker_init_dir_R, traj_dur, rates[1], spatial_resolution)
+        trajs = [target_traj, masker_traj]
+
+        moved_snds = [move_sound(trajs[i], snds[i]) for i in range(len(snds))]
+        moved_snds[0] += TMR
+        combined_moved_snds = sum(moved_snds)
+        stimulus = normalize_rms([combined_moved_snds])[0] + compute_attenuation(level)
+
+        # Save stimulus and stimulus information
+        stim_fname = "stim_" + str(stim_num).zfill(5) + ".wav"
+        stimulus.save(STIM_DIR/stim_fname)
+        stim_database = stim_database.append( \
+            [{"stim_num": stim_num, "stim_type": stim_type, "TMR": TMR,
+              "src": srcs[i], "is_target": is_target[i], "pattern": patterns[i],
+              "alt_rate": rates[i], "init_angle": init_angles[i], "init_dir_R": init_dir_Rs[i]}
+             for i in range(len(snds))],
+            ignore_index=True)
+        stim_database.to_csv(STIM_DIR/"stimulus_database.csv", index=False)
+        stim_num += 1
 ################################################################################
 # END SYNTHESIS
 ################################################################################
