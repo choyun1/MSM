@@ -14,21 +14,52 @@ def compute_attenuation(level, freq=None):
     return db_atten
 
 
-def make_sentence(n_talkers):
+def add_SSN_to_snds(srcs, patterns, snds, difficulty_TMR, SSN_ramp_dur):
+    # Assumes snds are already RMS normalized
+    n_snds = len(snds)
+    cues = [ELIGIBLE_BUG_DICT["_".join([patterns[i, 0], srcs[i]])]
+            for i in range(n_snds)]
+    cue_durs = [len(cue)/cue.fs for cue in cues]
+    tail_durs = [len(snds[i][cue_durs[i]:])/cues[i].fs for i in range(n_snds)]
+    silences = [Silence(cue_durs[i], cues[i].fs) for i in range(n_snds)]
+    SSNs = [ALL_WORDS_SPECT.to_Noise(tail_durs[i], cues[i].fs)
+            for i in range(n_snds)]
+    SSNs = normalize_rms(SSNs)
+    SSNs = [ramp_edges(SSN, SSN_ramp_dur) for SSN in SSNs]
+    SSN_maskers = [concat_sounds([silences[i], SSNs[i]])
+                   for i in range(n_snds)]
+    snds = [sum(center_sounds([snds[i] + difficulty_TMR, SSN_maskers[i]]))
+            for i in range(n_snds)]
+    return normalize_rms(snds)
+
+
+def make_sentence(n_talkers, syntax_condition="syntactic"):
+    from numpy.random import choice
     # Randomly select target and masker talkers and words
-    talkers = np.random.choice(ELIGIBLE_TALKERS, n_talkers, replace=False)
-    sentence_words = \
-        np.hstack( [np.random.choice(list(set(NAMES) - set(["Sue"])),
-                                     (n_talkers, 1), replace=False),
-                    np.random.choice(VERBS, (n_talkers, 1), replace=False),
-                    np.random.choice(NUMBERS, (n_talkers, 1), replace=False),
-                    np.random.choice(ADJECTIVES, (n_talkers, 1), replace=False),
-                    np.random.choice(NOUNS, (n_talkers, 1), replace=False)] )
+    talkers = choice(ELIGIBLE_TALKERS, n_talkers, replace=False)
+    if syntax_condition == "syntactic":
+        sentence_words = \
+            np.hstack( [choice(list(set(NAMES) - set(["Sue"])),
+                               (n_talkers, 1), replace=False),
+                        choice(VERBS,      (n_talkers, 1), replace=False),
+                        choice(NUMBERS,    (n_talkers, 1), replace=False),
+                        choice(ADJECTIVES, (n_talkers, 1), replace=False),
+                        choice(NOUNS,      (n_talkers, 1), replace=False)] )
+    elif syntax_condition == "random":
+        non_names = VERBS + NUMBERS + ADJECTIVES + NOUNS
+        sentence_words = \
+            np.hstack( [choice(list(set(NAMES) - set(["Sue"])),
+                               (n_talkers, 1), replace=False),
+                        choice(non_names, (n_talkers, 4), replace=False)] )
+    else:
+        raise ValueError("invalid syntax_condition; choose 'syntactic' or 'random'")
     sentence_words[0, 0] = "Sue"
     sentence_sounds = [ concat_sounds([ ELIGIBLE_BUG_DICT["_".join([word, talkers[i]])]
                                         for word in sentence_words[i, :] ])
                         for i in range(n_talkers) ]
     sentence_sounds = normalize_rms(sentence_sounds)
+    sentence_words = [" ".join(sentence_words[i, :]).upper()
+                      for i in range(n_talkers)]
     return talkers, sentence_words, sentence_sounds
 
 
@@ -97,27 +128,30 @@ def make_TP_sequence(n_seqs, seq_len=5, protected_delta=1, fs=44100, n_tones=8,
     gap = Silence(gap_dur, fs)
     tp_seqs = []
     for i in range(n_seqs):
-        curr_seq_list = [make_tone_pattern(pattern, fs, CFs[i], n_tones, tone_dur, edge_dur)
+        curr_seq_list = [make_tone_pattern(pattern, fs, CFs[i], n_tones,
+                                           tone_dur, edge_dur)
                          for pattern in patterns[i, :]]
         # insert silent gap between each tone pattern
         temp_list = (2*len(curr_seq_list) - 1)*[gap]
         temp_list[0::2] = curr_seq_list
         temp_list = [gap] + temp_list + [gap]
         tp_seqs.append(concat_sounds(temp_list))
+    patterns = [" ".join(patterns[i, :]).upper() for i in range(len(tp_seqs))]
     return bands, patterns, tp_seqs
 
 
-def make_circular_sinuisoidal_trajectory(r, elev, init_angle, init_dir_R,
-                                         T_dur, freq, spatial_resolution):
+def make_circular_sinuisoidal_trajectory(spatial_resolution, T_dur, r, elev,
+                                         freq, init_angle, init_dir_R):
     """
+    spatial_resolution = average points per degree over the whole trajectory
+    T_dur = duration of the trajectory
     r = radius [cm]
     elev = elevation [degrees]
+    freq = frequency of oscillation [Hz]
     init_angle = initial angle [degrees]; given w.r.t. 0 deg being front;
                  positive is right hemifield, negative is left hemifield
                  +/-180 is directly behind
-    T_dur = duration of the trajectory
-    freq = frequency of oscillation
-    spatial_resolution = average points per degree over the whole trajectory
+    init_dir_R = boolean indicating if initial movement direction is + or -
     """
     # Transform angular coordinates based on initial direction
     if not init_dir_R and init_angle > 0:
@@ -148,6 +182,54 @@ def traj_to_theta(traj):
     corr_theta = [(360 - theta) if theta > 180 else -1*theta
                   for theta in theta_list]
     return np.array(corr_theta)
+
+
+def choose_stim_for_block(stim_database, all_block_list, cond, n_trials_per_block):
+    from functools import partial, reduce
+    inner_merge = partial(pd.merge, how="inner")
+    flatten = lambda t: [item for sublist in t for item in sublist] # flattens list of lists in double loop
+
+    # Choose the subset of the stimulus database that satisfies the current conditions
+    conditions = []
+    conditions.append(stim_database[(stim_database["stim_type"] == cond.stim_type)])
+    conditions.append(stim_database[(stim_database["is_target"] == True) &
+                                    (stim_database["alt_rate"] == cond.target_alt_rate)])
+    conditions.append(stim_database[(stim_database["is_target"] == False) &
+                                    (stim_database["alt_rate"] == cond.masker_alt_rate)])
+    if cond.target_init_angle: # if initial angle is specified in conditions, it will be not None
+        conditions.append(stim_database[(stim_database["is_target"] == True) &
+                                        (np.abs(stim_database["init_angle"]) == cond.target_init_angle)])
+    if cond.masker_init_angle:
+        conditions.append(stim_database[(stim_database["is_target"] == False) &
+                                        (np.abs(stim_database["init_angle"]) == cond.masker_init_angle)])
+    subsets = [stim_database.loc[stim_database["stim_num"].isin(cond["stim_num"])]
+               for cond in conditions]
+    conditioned_stim_database = reduce(inner_merge, subsets)
+
+    # Determine the available stimuli by removing already used stimuli
+    eligible_stim_num = conditioned_stim_database["stim_num"].unique()
+    used_stim_num = [stim_tuple[1] for stim_tuple in flatten(all_block_list)]
+    available_stim_num = list(set(eligible_stim_num) - set(used_stim_num))
+    selected_stim_num = sorted(np.random.choice(available_stim_num, n_trials_per_block, replace=False))
+
+    # Load the stimuli as sounds and insert into block
+    srcs = [SoundLoader(STIM_DIR/("stim_" + str(stim_num).zfill(5) + ".wav"))
+            for stim_num in selected_stim_num]
+    pattern_items = [pattern.split(" ") for pattern in
+                     stim_database.loc[(stim_database["stim_num"].isin(selected_stim_num)) &
+                                       (stim_database["is_target"])]["pattern"]]
+    stim_tuple = list(zip(srcs, selected_stim_num, pattern_items))
+    np.random.shuffle(stim_tuple)
+    return stim_tuple
+
+
+def choose_stim_for_run(stim_database, curr_expt, n_trials_per_block):
+    all_block_list = []
+    for condition in curr_expt:
+        curr_block_list = choose_stim_for_block(stim_database, all_block_list,
+                                                condition, n_trials_per_block)
+        all_block_list.append(curr_block_list)
+    return all_block_list
 
 
 # def set_stim_order(stim_database, task_type, n_srcs, conditions,
@@ -280,42 +362,3 @@ def traj_to_theta(traj):
 #                                  "{:d} sources, and {:.1f} Hz available").format(
 #                                  task_type, n_srcs, cond)
 #             raise ValueError(exception_str)
-
-
-def choose_stim(stim_database, all_block_list, cond, n_trials_per_block):
-    from functools import partial, reduce
-    inner_merge = partial(pd.merge, how="inner")
-    flatten = lambda t: [item for sublist in t for item in sublist] # flattens list of lists in double loop
-
-    # Choose the subset of the stimulus database that satisfies the current conditions
-    conditions = []
-    conditions.append(stim_database[(stim_database["stim_type"] == cond.stim_type)])
-    conditions.append(stim_database[(stim_database["is_target"] == True) &
-                                    (stim_database["alt_rate"] == cond.target_alt_rate)])
-    conditions.append(stim_database[(stim_database["is_target"] == False) &
-                                    (stim_database["alt_rate"] == cond.masker_alt_rate)])
-    if cond.target_init_angle: # if initial angle is specified in conditions, it will be not None
-        conditions.append(stim_database[(stim_database["is_target"] == True) &
-                                        (np.abs(stim_database["init_angle"]) == cond.target_init_angle)])
-    if cond.masker_init_angle:
-        conditions.append(stim_database[(stim_database["is_target"] == False) &
-                                        (np.abs(stim_database["init_angle"]) == cond.masker_init_angle)])
-    subsets = [stim_database.loc[stim_database["stim_num"].isin(cond["stim_num"])]
-               for cond in conditions]
-    conditioned_stim_database = reduce(inner_merge, subsets)
-
-    # Determine the available stimuli by removing already used stimuli
-    eligible_stim_num = conditioned_stim_database["stim_num"].unique()
-    used_stim_num = [stim_tuple[1] for stim_tuple in flatten(all_block_list)]
-    available_stim_num = list(set(eligible_stim_num) - set(used_stim_num))
-    selected_stim_num = sorted(np.random.choice(available_stim_num, n_trials_per_block, replace=False))
-
-    # Load the stimuli as sounds and insert into block
-    srcs = [SoundLoader(STIM_DIR/("stim_" + str(stim_num).zfill(5) + ".wav"))
-            for stim_num in selected_stim_num]
-    patterns = [pattern for pattern in
-                stim_database.loc[(stim_database["stim_num"].isin(selected_stim_num)) &
-                                  (stim_database["is_target"])]["pattern"]]
-    stim_tuple = list(zip(srcs, selected_stim_num, patterns))
-    np.random.shuffle(stim_tuple)
-    return stim_tuple

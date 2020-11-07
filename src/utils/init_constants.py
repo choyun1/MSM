@@ -34,6 +34,7 @@ IMGS_DIR = PROJ_DIR/"assets"/"img"
 print("Importing sigtools...")
 from sigtools.utils import *
 from sigtools.sounds import *
+from sigtools.representations import *
 from sigtools.processing import *
 from sigtools.spatialization import *
 
@@ -89,7 +90,13 @@ ELIGIBLE_BUG_SNDS = [SoundLoader( (BUGS_DIR/fn).with_suffix(".wav") )
 ELIGIBLE_BUG_DICT = dict(zip(ELIGIBLE_BUG_FILES, ELIGIBLE_BUG_SNDS))
 
 
-### Definitions for BUG corpus
+### Pre-computation for making speech-shaped noise
+print("Preparing to create long-term spectrum matched noise...")
+ALL_WORDS_SUM = sum(zeropad_sounds(ELIGIBLE_BUG_SNDS))
+ALL_WORDS_SPECT = MagnitudeSpectrum(ALL_WORDS_SUM)
+
+
+### Definitions for tone pattern synthesis
 print("Set values for tone pattern synthesis...")
 PATTERN_TYPES = ["CONSTANT", "RISING", "FALLING",
                  "ALTERNATING", "STEP-UP", "STEP-DOWN"]
@@ -121,34 +128,28 @@ from collections import namedtuple
 print("Defining experimental conditions...")
 Condition = namedtuple("Condition",
                        "stim_type target_alt_rate masker_alt_rate target_init_angle masker_init_angle")
-EXPT_1_1_1 = [Condition("SEM", 0.5, 0.5, None, None),
+CONTROL_EM = [Condition("SEM", 0. , 0. , 45. , 45. ),
+              Condition("SEM", 0. , 0. , 63.5, 63.5)]
+EXPT_EV_EM = [Condition("SEM", 0.5, 0.5, None, None),
               Condition("SEM", 1. , 1. , None, None),
               Condition("SEM", 2. , 2. , None, None),
               Condition("SEM", 5. , 5. , None, None)]
-EXPT_1_1_2 = [Condition("SIM", 0.5, 0.5, None, None),
+EXPT_DV_EM = [Condition("SEM", 0.5, 5. , None, None),
+              Condition("SEM", 1. , 2. , None, None),
+              Condition("SEM", 2. , 1. , None, None),
+              Condition("SEM", 5. , 0.5, None, None)]
+CONTROL_IM = [Condition("SIM", 0. , 0. , 45. , 45. ),
+              Condition("SIM", 0. , 0. , 63.5, 63.5)]
+EXPT_EV_IM = [Condition("SIM", 0.5, 0.5, None, None),
               Condition("SIM", 1. , 1. , None, None),
               Condition("SIM", 2. , 2. , None, None),
               Condition("SIM", 5. , 5. , None, None)]
-EXPT_1_2_1 = [Condition("SEM", 0. , 0.5,   0.,  90.),
-              Condition("SEM", 0. , 1. ,   0.,  90.),
-              Condition("SEM", 0. , 2. ,   0.,  90.),
-              Condition("SEM", 0. , 5. ,   0.,  90.)]
-EXPT_1_2_2 = [Condition("SIM", 0. , 0.5,   0.,  90.),
-              Condition("SIM", 0. , 1. ,   0.,  90.),
-              Condition("SIM", 0. , 2. ,   0.,  90.),
-              Condition("SIM", 0. , 5. ,   0.,  90.)]
-EXPT_1_3_1 = [Condition("SEM", 0.5, 0. ,  90.,   0.),
-              Condition("SEM", 1. , 0. ,  90.,   0.),
-              Condition("SEM", 2. , 0. ,  90.,   0.),
-              Condition("SEM", 5. , 0. ,  90.,   0.)]
-EXPT_1_3_2 = [Condition("SIM", 0.5, 0. ,  90.,   0.),
-              Condition("SIM", 1. , 0. ,  90.,   0.),
-              Condition("SIM", 2. , 0. ,  90.,   0.),
-              Condition("SIM", 5. , 0. ,  90.,   0.)]
-EXPT_2_1_1 = [Condition("SEM", 0.5, 5. , None, None),
-              Condition("SEM", 5. , 0.5, None, None)]
-EXPT_2_1_2 = [Condition("SIM", 0.5, 5. , None, None),
+EXPT_DV_IM = [Condition("SIM", 0.5, 5. , None, None),
+              Condition("SIM", 1. , 2. , None, None),
+              Condition("SIM", 2. , 1. , None, None),
               Condition("SIM", 5. , 0.5, None, None)]
+ALL_CONDITIONS = CONTROL_EM + EXPT_EV_EM + EXPT_DV_EM \
+               + CONTROL_IM + EXPT_EV_IM + EXPT_DV_IM
 
 
 ### Dataframe columns

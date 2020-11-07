@@ -14,20 +14,12 @@ stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
 subject_ID = "AYC"
 n_blocks_per_cond = 2
 n_trials_per_block = 10
-curr_expt = n_blocks_per_cond*EXPT_1_1_1
-np.random.shuffle(curr_expt)
+
+curr_expt = []
+for _ in range(n_blocks_per_cond):
+    curr_expt = n_blocks_per_cond*(CONTROL_IM + EXPT_EV_IM + EXPT_DV_IM)
 stim_type = curr_expt[0].stim_type
-
-all_block_list = []
-for condition in curr_expt:
-    curr_block_list = choose_stim(stim_database, all_block_list,
-                                  condition, n_trials_per_block)
-    all_block_list.append(curr_block_list)
-run_stim_order = all_block_list
-
-# stim_type = "SEM"
-# conditions = [(0.5, 0.5), (1, 1), (2, 2), (5, 5)]
-# stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
+run_stim_order = choose_stim_for_run(stim_database, curr_expt, n_trials_per_block)
 
 # Check that the specified conditions are in the stimulus database
 # validate_parameters(stim_database, task_type, n_srcs, conditions)
@@ -51,7 +43,8 @@ run_stim_order = all_block_list
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"
 save_path = DATA_DIR/file_name
 run_data = pd.DataFrame(columns=DATA_COLUMNS)
-answer_choices = VERBS + NUMBERS + ADJECTIVES + NOUNS
+# answer_choices = VERBS + NUMBERS + ADJECTIVES + NOUNS
+answer_choices = sorted(VERBS + NUMBERS + ADJECTIVES + NOUNS)
 
 # Initialize GUI elements
 win = \

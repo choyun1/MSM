@@ -7,11 +7,11 @@ from utils.stim_tools import *
 # SYNTHESIS PARAMETERS
 ################################################################################
 n_stim = 100
-# stim_type = "SEM"
-# TMR = -25
-stim_type = "SIM"
-TMR = 0
-alt_rates = [0.5, 1, 2, 5]
+
+n_srcs = 2
+TMR_EM = -20
+TMR_IM = 0
+noise_ramp = 50e-3
 spatial_resolution = 2 # average samples per degree over the whole trajectory
 level = 80
 r = 100
@@ -28,56 +28,76 @@ except FileNotFoundError:
 ################################################################################
 # SYNTHESIS ROUTINE
 ################################################################################
-for rate in alt_rates:
-    print("\nSynthesizing {:s} {:.1f} Hz stimuli...".format(stim_type, rate))
+for cond in ALL_CONDITIONS:
+    print("\nSynthesizing {:s}, {:.1f} Hz, {:.1f} Hz stimuli...".format(\
+          cond.stim_type, cond.target_alt_rate, cond.masker_alt_rate))
     for _ in progress_bar(range(n_stim)):
-        rates = [rate, 0]
-
-        if stim_type == "SEM":
-            srcs, patterns, snds = make_sentence(2)
-            patterns = [" ".join(patterns[i, :]).upper() for i in range(len(snds))]
-            srcs[1] = "GN"
+        # Make sources and patterns
+        srcs, patterns, snds = make_sentence(n_srcs, "random")
+        if cond.stim_type == "SEM":
+            TMR = TMR_EM
+            srcs[1] = "SSN"
             patterns[1] = ""
-            snds[1] = ramp_edges(GaussianNoise(len(snds[0])/snds[0].fs, snds[0].fs), 25e-3)
-        elif stim_type == "SIM":
-            srcs, patterns, snds = make_sentence(2)
-            patterns = [" ".join(patterns[i, :]).upper() for i in range(len(snds))]
+            snds[1] = ramp_edges(\
+                ALL_WORDS_SPECT.to_Noise(len(snds[0])/snds[0].fs, snds[0].fs),
+                                 noise_ramp)
+        elif cond.stim_type == "SIM":
+            TMR = TMR_IM
         else:
             raise ValueError("invalid stim_type; choose 'SEM' or 'SIM'")
-        is_target = [True, False]
         snds = zeropad_sounds(snds)
         snds = normalize_rms(snds)
         snds = [snd.make_binaural() for snd in snds]
 
-        # target_init_angle = 180*(np.random.rand(1)[0] - 0.5)
-        # masker_init_angle = 180*(np.random.rand(1)[0] - 0.5)
-        target_init_angle = 90*np.random.choice([-1, 1])
-        masker_init_angle = 0
+        # Set angles, velocities, directions
+        is_target = n_srcs*[False]
+        is_target[0] = True
+        rates = [cond.target_alt_rate, cond.masker_alt_rate]
+        if rates[0] == 0: # Static 90 or 127
+            target_init_angle = cond.target_init_angle*np.random.choice([-1, 1])
+            masker_init_angle = -target_init_angle
+            target_init_dir_R = True
+            masker_init_dir_R = False
+        elif rates[0] == rates[1]:
+            target_init_angle = 180*(np.random.rand() - 0.5)
+            masker_init_angle = -target_init_angle
+            target_init_dir_R = np.random.choice([True, False])
+            masker_init_dir_R = not target_init_dir_R
+        else:
+            target_init_angle = 180*(np.random.rand() - 0.5)
+            masker_init_angle = 180*(np.random.rand() - 0.5)
+            target_init_dir_R = np.random.choice([True, False])
+            masker_init_dir_R = np.random.choice([True, False])
         init_angles = [target_init_angle, masker_init_angle]
-
-        target_init_dir_R = np.random.choice([True, False])
-        # masker_init_dir_R = np.random.choice([True, False])
-        masker_init_dir_R = not target_init_dir_R
         init_dir_Rs = [target_init_dir_R, masker_init_dir_R]
 
+        # Make the trajectories
         traj_dur = len(snds[0])/snds[0].fs
-        target_traj = make_circular_sinuisoidal_trajectory(r, elev, target_init_angle, target_init_dir_R, traj_dur, rates[0], spatial_resolution)
-        masker_traj = make_circular_sinuisoidal_trajectory(r, elev, masker_init_angle, masker_init_dir_R, traj_dur, rates[1], spatial_resolution)
-        trajs = [target_traj, masker_traj]
+        trajs = [make_circular_sinuisoidal_trajectory(\
+                     spatial_resolution, traj_dur, r, elev,
+                     rates[i], init_angles[i], init_dir_Rs[i])
+                 for i in range(n_srcs)]
 
-        moved_snds = [move_sound(trajs[i], snds[i]) for i in range(len(snds))]
+        # Move each source
+        moved_snds = [move_sound(trajs[i], snds[i]) for i in range(n_srcs)]
         moved_snds[0] += TMR
-        combined_moved_snds = sum(moved_snds)
-        stimulus = normalize_rms([combined_moved_snds])[0] + compute_attenuation(level)
+        combined_moved_snds = normalize_rms([sum(moved_snds)])[0]
+        stimulus = combined_moved_snds + compute_attenuation(level)
 
         # Save stimulus and stimulus information
         stim_fname = "stim_" + str(stim_num).zfill(5) + ".wav"
         stimulus.save(STIM_DIR/stim_fname)
-        stim_database = stim_database.append( \
-            [{"stim_num": stim_num, "stim_type": stim_type, "TMR": TMR,
-              "src": srcs[i], "is_target": is_target[i], "pattern": patterns[i],
-              "alt_rate": rates[i], "init_angle": init_angles[i], "init_dir_R": init_dir_Rs[i]}
-             for i in range(len(snds))],
+        stim_database = stim_database.append(\
+            [{"stim_num": stim_num,
+              "stim_type": cond.stim_type,
+              "TMR": TMR,
+              "src": srcs[i],
+              "is_target": is_target[i],
+              "pattern": patterns[i],
+              "alt_rate": rates[i],
+              "init_angle": init_angles[i],
+              "init_dir_R": init_dir_Rs[i]}
+             for i in range(n_srcs)],
             ignore_index=True)
         stim_database.to_csv(STIM_DIR/"stimulus_database.csv", index=False)
         stim_num += 1
