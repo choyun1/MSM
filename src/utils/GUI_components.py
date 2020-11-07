@@ -19,7 +19,7 @@ class CustomMouse(event.Mouse):
             return False
 
 
-class SupportingText:
+class SupportText:
     def __init__(self, win):
         text_stim = \
             visual.TextStim(
@@ -31,14 +31,15 @@ class SupportingText:
             )
         self.text_stim = text_stim
 
-    def set_text(self, text):
-        self.text_stim.text = text
-
-    def set_pos(self, pos):
-        self.text_stim.pos = pos
-
-    def set_color(self, color):
-        self.text_stim.color = color
+    def set(self, text=None, color=None, pos=None, size=None):
+        if text:
+            self.text_stim.text = text
+        if color:
+            self.text_stim.color = color
+        if pos:
+            self.text_stim.pos = pos
+        if size:
+            self.text_stim.size = size
 
     def draw(self):
         self.text_stim.draw()

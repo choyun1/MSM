@@ -150,7 +150,14 @@ EXPT_DV_IM = [Condition("SIM", 0.5, 5. , None, None),
               Condition("SIM", 5. , 0.5, None, None)]
 ALL_CONDITIONS = CONTROL_EM + EXPT_EV_EM + EXPT_DV_EM \
                + CONTROL_IM + EXPT_EV_IM + EXPT_DV_IM
-
+TRAIN_COND = [Condition("SEM", 0. , 0. , 63.5, 63.5),
+              Condition("SEM", 1. , 1. , None, None),
+              Condition("SEM", 2. , 2. , None, None),
+              Condition("SEM", 1,   2. , None, None),
+              Condition("SIM", 0.5, 0.5, None, None),
+              Condition("SIM", 1. , 1. , None, None),
+              Condition("SIM", 0.5, 5. , None, None),
+              Condition("SIM", 2. , 1. , None, None)]
 
 ### Dataframe columns
 STIM_COLUMNS = ["stim_num", "stim_type", "TMR",

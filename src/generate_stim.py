@@ -9,7 +9,7 @@ from utils.stim_tools import *
 n_stim = 100
 
 n_srcs = 2
-TMR_EM = -20
+TMR_EM = -18
 TMR_IM = 0
 noise_ramp = 50e-3
 spatial_resolution = 2 # average samples per degree over the whole trajectory

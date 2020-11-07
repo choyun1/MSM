@@ -1,20 +1,44 @@
 from psychopy import core, event
 
 
+def make_task_instruction():
+    task_instr_str =\
+        "Thank you for participating in this experiment!\n\n"
+        "This is a speech intelligibility task. You will simultaneously "
+        "hear ONE MALE TARGET TALKER and ONE MASKER. The masker may be "
+        "another male talker or a noise source, and you will be informed "
+        "before the start of each block which will be used.\n\n"
+        "You may hear the sounds coming from different locations, and the "
+        "sounds may move around your head. You will be informed if and how "
+        "quickly the sounds will move before the start of each block.\n\n"
+        "The target talker will always begin his sentence with the name 'SUE', "
+        "followed by a RANDOM string of 4 words. Ignore the masker, and respond "
+        "using the word grid interface that appears after the sound is played. "
+        "You may report back the words spoken by the target talker in ANY "
+        "ORDER.\n\n\n"
+        "Press 'NEXT' when ready."
+    return task_instr_str
+
+
+def make_stim_info_str(cond):
+    masker_type = "NOISE SOURCE" if cond.stim_type == "SEM" else "MALE TALKER"
+    target_rate, masker_rate = cond.target_alt_rate, cond.masker_alt_rate
+    rate_to_speed_map = {0:   "be STATIC",
+                         0.5: "move VERY SLOWLY",
+                         1:   "move SLOWLY",
+                         2:   "move FAST",
+                         5:   "move VERY FAST"}
+    stim_str = "The TARGET will {:s}.\nThe MASKER will {:s}.\n\n"
+               "The MASKER will be a {:s}.\n\n\n".format(\
+                rate_to_speed_map[target_rate],
+                rate_to_speed_map[masker_rate],
+                masker_type)
+    return stim_str
+
+
 def exit_program(win):
     win.close()
     core.quit()
-
-
-def make_task_instruction_str():
-    task_str = """
-This is a speech intelligibility task. You will hear two male talkers moving
-between your ears. One of the talkers will begin their sentence with the name
-'Sue'. Attend to this talker and respond with the spoken sentence.
-
-Press 'NEXT' when ready.
-    """
-    return task_str
 
 
 def push_button_wait_logic(func):
@@ -45,13 +69,16 @@ def wait_for_push_button(win, mouse, push_button):
 
 
 @push_button_wait_logic
-def grid_logic(win, mouse, push_button, helper_text, n_slots,
-               grid_interface, submission_queue):
+def grid_logic(win, mouse, push_button, helper_text, n_slots, submission_queue,
+               grid_interface):
     # Flip frame
     grid_interface.draw()
     submission_queue.draw()
-    helper_text.set_pos((0, 11))
-    helper_text.set_text("Select the words in the order they were spoken.")
+    # trial_str = "Report back the words spoken by the target talker in the EXACT "
+    #             "ORDER by clicking on the words in the grid."
+    trial_str = "Report back the words spoken by the target talker in ANY ORDER "
+                "by clicking on the words in the grid."
+    helper_text.set(text=trial_str, pos=(0, 10))
     helper_text.draw()
     push_button.draw()
     win.flip()
@@ -89,49 +116,56 @@ def do_recall_task(stim_type, win, mouse, helper_text, push_button,
     win.flip()
 
     # Build the correct answer queue
+    n_slots = len(target_patterns)
     for item in target_patterns:
         answer_queue.insert(item)
-    # Always insert constant pattern into the submission queue
-    if stim_type == "SEM" or stim_type == "SIM":
-        submission_queue.insert("SUE")
-    elif stim_type == "TIM":
-        submission_queue.insert(0)
-    else:
-        raise ValueError("invalid stim_type; select 'SIM' or 'TIM'")
+    submission_queue.insert(target_patterns[0]) # always insert correct pattern
 
-    n_slots = len(target_patterns)
-    grid_logic(win, mouse, push_button, helper_text, n_slots,
-               grid_interface, submission_queue)
+    # Wait for user response using the grid interface
+    grid_logic(win, mouse, push_button, helper_text, n_slots, submission_queue,
+               grid_interface)
+
+    # ### Scoring for answer in EXACT ORDER
+    # # Score subject responses, minus the first constant pattern
+    # subj_response_correct = \
+    #     sum(answer_queue.queue_items[i] == submission_queue.queue_items[i]
+    #         for i in range(1, n_slots))
+    # # Compare the answer and submission one by one to toggle feedback color
+    # for i in range(1, n_slots):
+    #     if answer_queue.queue_items[i] == submission_queue.queue_items[i]:
+    #         submission_queue.set_border_color(i, (0, 255, 0))
+    #     else:
+    #         submission_queue.set_border_color(i, (255, 0, 0))
+    #     submission_queue.toggle_border(i)
+
+    ### Scoring for answer in ANY ORDER
     # Score subject responses, minus the first constant pattern
-    subj_response_correct = \
-        sum(answer_queue.queue_items[i] == submission_queue.queue_items[i]
-            for i in range(1, n_slots))
-
-    # Compare the answer and submission one by one to see which is correct
+    answer_set = set(answer_queue.queue_items[1:])
+    submission_set = set(submission_queue.queue_items[1:])
+    subj_response_correct = len(answer_set.intersection(submission_set))
+    # Compare the answer and submission one by one to toggle feedback color
     for i in range(1, n_slots):
-        if answer_queue.queue_items[i] == submission_queue.queue_items[i]:
+        if submission_queue.queue_items[i] in answer_set:
             submission_queue.set_border_color(i, (0, 255, 0))
         else:
             submission_queue.set_border_color(i, (255, 0, 0))
         submission_queue.toggle_border(i)
 
     # Display answer and feedback
-    helper_text.set_text("CORRECT ANSWER")
-    helper_text.set_pos((0, 2))
+    helper_text.set(text="CORRECT ANSWERS", pos=(0, 3))
     helper_text.draw()
-    answer_queue.draw()
+    # answer_queue.draw()
     submission_queue.draw()
     win.flip()
     core.wait(0.5)
 
     # Re-draw elements for waiting
-    helper_text.set_text("Press 'NEXT' to continue")
-    helper_text.set_pos((0, -4))
+    helper_text.set(text="Press 'NEXT' to continue", pos=(0, -2))
     helper_text.draw()
     push_button.set_text("NEXT")
     push_button.enable()
     push_button.draw()
-    answer_queue.draw()
+    # answer_queue.draw()
     submission_queue.draw()
     win.flip()
     wait_for_push_button(win, mouse, push_button)
@@ -139,69 +173,6 @@ def do_recall_task(stim_type, win, mouse, helper_text, push_button,
     return submission_queue.queue_items, subj_response_correct
 
 
-# def do_word_recall_task(win, mouse, helper_text, push_button,
-#                         word_submission_queue, word_answer_queue,
-#                         word_grid_interface,
-#                         target_sentence_items):
-#     # Reset GUI elements
-#     word_answer_queue.reset()
-#     word_submission_queue.reset()
-#     word_submission_queue.reset_borders()
-#     helper_text.set_text("")
-#     helper_text.set_color((0, 0, 0))
-#     push_button.reset_pressed()
-#     push_button.set_text("SUBMIT")
-#     win.flip()
-#
-#     # Build the correct answer queue
-#     for item in target_sentence_items:
-#         word_answer_queue.insert(item.upper())
-#     # Always insert constant pattern into the submission queue
-#     word_submission_queue.insert("SUE")
-#
-#     # Get user response
-#     n_slots = len(target_sentence_items)
-#     grid_logic(n_slots, win, mouse, helper_text, push_button,
-#                word_grid_interface, word_submission_queue)
-#
-#     # Score responses EXCLUDING the first constant pattern
-#     subj_response = word_submission_queue.queue_items
-#     subj_response_correct = \
-#         sum( word_answer_queue.queue_items[i] == word_submission_queue.queue_items[i]
-#              for i in range(1, len(subj_response)) )
-#
-#     # Toggle color indicating correct/incorrect
-#     for i in range(1, len(word_submission_queue)):
-#         if word_answer_queue.queue_items[i] == word_submission_queue.queue_items[i]:
-#             word_submission_queue.set_border_color(i, (0, 255, 0))
-#         else:
-#             word_submission_queue.set_border_color(i, (255, 0, 0))
-#         word_submission_queue.toggle_border(i)
-#
-#     # Display answer and feedback
-#     word_answer_queue.draw()
-#     word_submission_queue.draw()
-#     win.flip()
-#     core.wait(0.5)
-#
-#     # Re-draw elements for waiting
-#     helper_text.set_text("Press 'NEXT' to continue")
-#     helper_text.draw()
-#     push_button.set_text("NEXT")
-#     push_button.enable()
-#     push_button.draw()
-#     word_answer_queue.draw()
-#     word_submission_queue.draw()
-#     win.flip()
-#     wait_for_push_button(win, mouse, push_button)
-#
-#     return subj_response, subj_response_correct
-
-
-
-#####
-#####
-#####
 # def do_tone_ID_task(win, mouse, tone_submission_queue, tone_answer_queue,
 #                     tone_pattern_interface, helper_text, push_button,
 #                     N_PATTERNS, target_pattern_numbers):

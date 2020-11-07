@@ -1,0 +1,75 @@
+\documentclass[12pt]{article}
+
+\usepackage[a4paper,left=0.5in,right=0.5in,top=0.75in,bottom=0.75in]{geometry}
+\usepackage{tikz}
+\usepackage{subfigure}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{array}
+
+\title{The spatial separation between sinusoidal trajectories and average speeds}
+\author{A. Y. Cho}
+\date{\today}
+
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+\begin{document}
+\maketitle
+
+\section{Analytic derivation}
+Let $\Delta\theta$ stand for the difference in trajectories between target and masker as a function of time. Let $\omega_i$ be the angular velocities and let $\phi_i$ be the initial phases for each source. The amplitude of the trajectories, $A$, is equal to $90^{\circ}$. Then, the long-term RMS separation between the trajectory is obtained by the following integral:
+\begin{equation}\label{eq:1}
+  \Delta\theta_{\textrm{\tiny RMS}} = \sqrt{ \lim_{T \to \infty} \frac{1}{T} \int^{T}_0 \left[A\sin{\left(\omega_1 t + \phi_1 \right)} - A\sin{\left(\omega_2 t + \phi_2 \right)} \right]^2 dt}
+\end{equation}
+Constant amplitude $A$ can be factored out of the above equation. Let $\xi_1 = \omega_1 t + \phi_1$ and $\xi_2 = \omega_2 t + \phi_2$. Making the substition, above equation can be written as:
+\begin{equation}\label{eq:2}
+  \Delta\theta_{\textrm{\tiny RMS}} = A \sqrt{ \lim_{T \to \infty} \frac{1}{T} \int^{T}_0 \left[\sin{\xi_1} - \sin{\xi_2} \right]^2 dt}
+\end{equation}
+
+\subsection{Equal velocities, symmetric motion}
+When the sources have velocities with equal magnitude but opposite directions (i.e. $pi$ radians out of phase), we have $\xi_1 = \xi_2 + \pi$. This means $\sin{\xi_1} = -\sin{\xi_2}$ and Eq. (\ref{eq:2}) simplifies thusly:
+\begin{equation}
+  \Delta\theta_{\textrm{\tiny RMS}} = 2A \sqrt{ \lim_{T \to \infty} \frac{1}{T} \int^{T}_0 \sin^2{\xi} dt}
+\end{equation}
+In the limit as $T \to \infty$, the expression inside the square root converges to $\frac{1}{2}$. Therefore, $\Delta\theta_{\tiny \textrm{RMS}} = \sqrt{2}A \approx 127.3^{\circ}$.
+
+\subsection{Differential velocities motion}
+In this case, we have $\omega_1 \neq \omega_2$ and $\phi_1 \neq \phi_2$. Evaluating the indefinite integral gives:
+\begin{align}\label{eq:4}
+  & \int \left[\sin \xi_1 - \sin \xi_2\right]^2 dt \notag\\
+  & = t - \frac{1}{2\xi_1}\sin\xi_1\cos\xi_1 - \frac{1}{2\xi_2}\sin\xi_2\cos\xi_2 \notag\\
+  & + \frac{1}{\omega_1 + \omega_2}\sin{\left(\xi_1 + \xi_2\right)} + \frac{1}{\omega_1 - \omega_2}\sin{\left(\xi_1 - \xi_2\right)} + C
+\end{align}
+In the limit as $T \to \infty$, all sinusoidal terms in Eq. (\ref{eq:4}) above vanish to 0. Therefore, the only term left inside the square root of the original Eq. (\ref{eq:2}) will be 1. This implies that the RMS spatial separation will be $A = 90^{\circ}$.
+
+
+\section{Speeds being used}
+Following speeds will be considered:
+\begin{table}[h!]
+\centering
+\begin{tabular}{ c | c | c }
+  Velocity conditions & $f$ [Hz] & $\omega$ [rad/s] \\\hline
+  Static (ST)    & 0   & 0\\
+  Very slow (VS) & 0.5 & $\pi$\\
+  Slow (SL)      & 1   & $2\pi$\\
+  Fast (FS)      & 2   & $4\pi$\\
+  Very fast (VF) & 5   & $10\pi$
+\end{tabular}
+\end{table}
+
+For sense of scale, in the next table we convert the angular velocities to equivalent radial speed ($s$) at $r = 1$ m and show their corresponding RMS speeds ($\bar{s}$) (excluding the static condition):
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ c | c | c }
+  Vel. cond. & $s$ [m/s] & $\bar{s}$ [m/s] \\\hline
+  VS &  3.14 & 2.22\\
+  SL &  6.28 & 4.44\\
+  FS & 12.56 & 8.89\\
+  VF & 31.52 & 22.21
+\end{tabular}
+\end{table}
+The average human walking speed of 4 mph is approximately 1.79 m/s. Even the SL condition is about 2.5 times faster than someone walking by 3 feet away!
+
+\end{document}

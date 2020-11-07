@@ -14,25 +14,6 @@ def compute_attenuation(level, freq=None):
     return db_atten
 
 
-def add_SSN_to_snds(srcs, patterns, snds, difficulty_TMR, SSN_ramp_dur):
-    # Assumes snds are already RMS normalized
-    n_snds = len(snds)
-    cues = [ELIGIBLE_BUG_DICT["_".join([patterns[i, 0], srcs[i]])]
-            for i in range(n_snds)]
-    cue_durs = [len(cue)/cue.fs for cue in cues]
-    tail_durs = [len(snds[i][cue_durs[i]:])/cues[i].fs for i in range(n_snds)]
-    silences = [Silence(cue_durs[i], cues[i].fs) for i in range(n_snds)]
-    SSNs = [ALL_WORDS_SPECT.to_Noise(tail_durs[i], cues[i].fs)
-            for i in range(n_snds)]
-    SSNs = normalize_rms(SSNs)
-    SSNs = [ramp_edges(SSN, SSN_ramp_dur) for SSN in SSNs]
-    SSN_maskers = [concat_sounds([silences[i], SSNs[i]])
-                   for i in range(n_snds)]
-    snds = [sum(center_sounds([snds[i] + difficulty_TMR, SSN_maskers[i]]))
-            for i in range(n_snds)]
-    return normalize_rms(snds)
-
-
 def make_sentence(n_talkers, syntax_condition="syntactic"):
     from numpy.random import choice
     # Randomly select target and masker talkers and words
@@ -138,6 +119,26 @@ def make_TP_sequence(n_seqs, seq_len=5, protected_delta=1, fs=44100, n_tones=8,
         tp_seqs.append(concat_sounds(temp_list))
     patterns = [" ".join(patterns[i, :]).upper() for i in range(len(tp_seqs))]
     return bands, patterns, tp_seqs
+
+
+def add_SSN_to_snds(srcs, patterns, snds, difficulty_TMR, SSN_ramp_dur):
+    # Adds speech shaped noise to each src
+    # Assumes snds are already RMS normalized
+    n_snds = len(snds)
+    cues = [ELIGIBLE_BUG_DICT["_".join([patterns[i, 0], srcs[i]])]
+            for i in range(n_snds)]
+    cue_durs = [len(cue)/cue.fs for cue in cues]
+    tail_durs = [len(snds[i][cue_durs[i]:])/cues[i].fs for i in range(n_snds)]
+    silences = [Silence(cue_durs[i], cues[i].fs) for i in range(n_snds)]
+    SSNs = [ALL_WORDS_SPECT.to_Noise(tail_durs[i], cues[i].fs)
+            for i in range(n_snds)]
+    SSNs = normalize_rms(SSNs)
+    SSNs = [ramp_edges(SSN, SSN_ramp_dur) for SSN in SSNs]
+    SSN_maskers = [concat_sounds([silences[i], SSNs[i]])
+                   for i in range(n_snds)]
+    snds = [sum(center_sounds([snds[i] + difficulty_TMR, SSN_maskers[i]]))
+            for i in range(n_snds)]
+    return normalize_rms(snds)
 
 
 def make_circular_sinuisoidal_trajectory(spatial_resolution, T_dur, r, elev,
