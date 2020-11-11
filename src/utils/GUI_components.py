@@ -25,9 +25,9 @@ class SupportText:
             visual.TextStim(
                 win,
                 text="",
+                pos=(0, 0),
                 color=(0, 0, 0),
-                colorSpace="rgb255",
-                pos=(0, 0)
+                colorSpace="rgb255"
             )
         self.text_stim = text_stim
 

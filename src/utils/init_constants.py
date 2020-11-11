@@ -128,36 +128,56 @@ from collections import namedtuple
 print("Defining experimental conditions...")
 Condition = namedtuple("Condition",
                        "stim_type target_alt_rate masker_alt_rate target_init_angle masker_init_angle")
-CONTROL_EM = [Condition("SEM", 0. , 0. , 45. , 45. ),
-              Condition("SEM", 0. , 0. , 63.5, 63.5)]
-EXPT_EV_EM = [Condition("SEM", 0.5, 0.5, None, None),
-              Condition("SEM", 1. , 1. , None, None),
-              Condition("SEM", 2. , 2. , None, None),
-              Condition("SEM", 5. , 5. , None, None)]
-EXPT_DV_EM = [Condition("SEM", 0.5, 5. , None, None),
-              Condition("SEM", 1. , 2. , None, None),
-              Condition("SEM", 2. , 1. , None, None),
-              Condition("SEM", 5. , 0.5, None, None)]
-CONTROL_IM = [Condition("SIM", 0. , 0. , 45. , 45. ),
-              Condition("SIM", 0. , 0. , 63.5, 63.5)]
-EXPT_EV_IM = [Condition("SIM", 0.5, 0.5, None, None),
-              Condition("SIM", 1. , 1. , None, None),
-              Condition("SIM", 2. , 2. , None, None),
-              Condition("SIM", 5. , 5. , None, None)]
-EXPT_DV_IM = [Condition("SIM", 0.5, 5. , None, None),
-              Condition("SIM", 1. , 2. , None, None),
-              Condition("SIM", 2. , 1. , None, None),
-              Condition("SIM", 5. , 0.5, None, None)]
-ALL_CONDITIONS = CONTROL_EM + EXPT_EV_EM + EXPT_DV_EM \
-               + CONTROL_IM + EXPT_EV_IM + EXPT_DV_IM
-TRAIN_COND = [Condition("SEM", 0. , 0. , 63.5, 63.5),
-              Condition("SEM", 1. , 1. , None, None),
-              Condition("SEM", 2. , 2. , None, None),
-              Condition("SEM", 1,   2. , None, None),
-              Condition("SIM", 0.5, 0.5, None, None),
-              Condition("SIM", 1. , 1. , None, None),
-              Condition("SIM", 0.5, 5. , None, None),
-              Condition("SIM", 2. , 1. , None, None)]
+# CONTROL_EM = [Condition("SEM", 0. , 0. , 45. , 45. ),
+#               Condition("SEM", 0. , 0. , 63.5, 63.5)]
+# EXPT_EV_EM = [Condition("SEM", 0.5, 0.5, None, None),
+#               Condition("SEM", 1. , 1. , None, None),
+#               Condition("SEM", 2. , 2. , None, None),
+#               Condition("SEM", 5. , 5. , None, None)]
+# EXPT_DV_EM = [Condition("SEM", 0.5, 5. , None, None),
+#               Condition("SEM", 1. , 2. , None, None),
+#               Condition("SEM", 2. , 1. , None, None),
+#               Condition("SEM", 5. , 0.5, None, None)]
+# CONTROL_IM = [Condition("SIM", 0. , 0. , 45. , 45. ),
+#               Condition("SIM", 0. , 0. , 63.5, 63.5)]
+# EXPT_EV_IM = [Condition("SIM", 0.5, 0.5, None, None),
+#               Condition("SIM", 1. , 1. , None, None),
+#               Condition("SIM", 2. , 2. , None, None),
+#               Condition("SIM", 5. , 5. , None, None)]
+# EXPT_DV_IM = [Condition("SIM", 0.5, 5. , None, None),
+#               Condition("SIM", 1. , 2. , None, None),
+#               Condition("SIM", 2. , 1. , None, None),
+#               Condition("SIM", 5. , 0.5, None, None)]
+# TRAIN_COND = [Condition("SEM", 0. , 0. , 63.5, 63.5),
+#               Condition("SEM", 1. , 1. , None, None),
+#               Condition("SEM", 1,   2. , None, None),
+#               Condition("SEM", 0. , 0. , 45. , 45. ),
+#               Condition("SIM", 0.5, 0.5, None, None),
+#               Condition("SIM", 0.5, 5. , None, None)]
+# ALL_CONDITIONS = CONTROL_EM + EXPT_EV_EM + EXPT_DV_EM \
+#                + CONTROL_IM + EXPT_EV_IM + EXPT_DV_IM
+
+PILOT_V6_CONTROLS = [Condition("SEM", 0. , 0. , 45. , 45. ),
+                     Condition("SIM", 0. , 0. , 45. , 45. )]
+PILOT_V6_EV_EM = [Condition("SEM", 0.1, 0.1, None, None),
+                  Condition("SEM", 0.5, 0.5, None, None),
+                  Condition("SEM", 1. , 1. , None, None),
+                  Condition("SEM", 2. , 2. , None, None)]
+PILOT_V6_DV_EM = [Condition("SEM", 0.1, 2. , None, None),
+                  Condition("SEM", 0.5, 1. , None, None),
+                  Condition("SEM", 1. , 0.5, None, None),
+                  Condition("SEM", 2. , 0.1, None, None)]
+PILOT_V6_EV_IM = [Condition("SIM", 0.1, 0.1, None, None),
+                  Condition("SIM", 0.5, 0.5, None, None),
+                  Condition("SIM", 1. , 1. , None, None),
+                  Condition("SIM", 2. , 2. , None, None)]
+PILOT_V6_DV_IM = [Condition("SIM", 0.1, 2. , None, None),
+                  Condition("SIM", 0.5, 1. , None, None),
+                  Condition("SIM", 1. , 0.5, None, None),
+                  Condition("SIM", 2. , 0.1, None, None)]
+PILOT_V6_CONDS = PILOT_V6_CONTROLS \
+               + PILOT_V6_EV_EM + PILOT_V6_DV_EM \
+               + PILOT_V6_EV_IM + PILOT_V6_DV_IM
 
 ### Dataframe columns
 STIM_COLUMNS = ["stim_num", "stim_type", "TMR",

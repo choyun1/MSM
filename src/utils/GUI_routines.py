@@ -3,19 +3,19 @@ from psychopy import core, event
 
 def make_task_instruction():
     task_instr_str =\
-        "Thank you for participating in this experiment!\n\n"
-        "This is a speech intelligibility task. You will simultaneously "
-        "hear ONE MALE TARGET TALKER and ONE MASKER. The masker may be "
-        "another male talker or a noise source, and you will be informed "
-        "before the start of each block which will be used.\n\n"
-        "You may hear the sounds coming from different locations, and the "
-        "sounds may move around your head. You will be informed if and how "
-        "quickly the sounds will move before the start of each block.\n\n"
-        "The target talker will always begin his sentence with the name 'SUE', "
-        "followed by a RANDOM string of 4 words. Ignore the masker, and respond "
-        "using the word grid interface that appears after the sound is played. "
-        "You may report back the words spoken by the target talker in ANY "
-        "ORDER.\n\n\n"
+        "Thank you for participating in this experiment!\n\n"\
+        "This is a speech intelligibility task. You will simultaneously "\
+        "hear ONE MALE TARGET TALKER and ONE MASKER. The masker may be "\
+        "another male talker or a noise source, and you will be informed "\
+        "before the start of each block which will be used.\n\n"\
+        "You may hear the sounds coming from different locations, and the "\
+        "sounds may move around your head. You will be informed if and how "\
+        "quickly the sounds will move before the start of each block.\n\n"\
+        "The target talker will always begin his sentence with the name 'SUE', "\
+        "followed by a RANDOM string of 4 words. Ignore the masker, and respond "\
+        "using the word grid interface that appears after the sound is played. "\
+        "You may report back the words spoken by the target talker in ANY "\
+        "ORDER.\n\n\n"\
         "Press 'NEXT' when ready."
     return task_instr_str
 
@@ -23,16 +23,16 @@ def make_task_instruction():
 def make_stim_info_str(cond):
     masker_type = "NOISE SOURCE" if cond.stim_type == "SEM" else "MALE TALKER"
     target_rate, masker_rate = cond.target_alt_rate, cond.masker_alt_rate
-    rate_to_speed_map = {0:   "be STATIC",
+    rate_to_speed_map = {0:   "be STATIC and not move",
                          0.5: "move VERY SLOWLY",
                          1:   "move SLOWLY",
                          2:   "move FAST",
                          5:   "move VERY FAST"}
-    stim_str = "The TARGET will {:s}.\nThe MASKER will {:s}.\n\n"
-               "The MASKER will be a {:s}.\n\n\n".format(\
+    stim_str = "The MASKER will be a {:s}.\n\n"\
+               "The TARGET will {:s}.\nThe MASKER will {:s}.\n\n\n\n".format(\
+                masker_type,
                 rate_to_speed_map[target_rate],
-                rate_to_speed_map[masker_rate],
-                masker_type)
+                rate_to_speed_map[masker_rate])
     return stim_str
 
 
@@ -76,7 +76,7 @@ def grid_logic(win, mouse, push_button, helper_text, n_slots, submission_queue,
     submission_queue.draw()
     # trial_str = "Report back the words spoken by the target talker in the EXACT "
     #             "ORDER by clicking on the words in the grid."
-    trial_str = "Report back the words spoken by the target talker in ANY ORDER "
+    trial_str = "Report back the words spoken by the target talker in ANY ORDER "\
                 "by clicking on the words in the grid."
     helper_text.set(text=trial_str, pos=(0, 10))
     helper_text.draw()
@@ -109,8 +109,7 @@ def do_recall_task(stim_type, win, mouse, helper_text, push_button,
     answer_queue.reset()
     submission_queue.reset()
     submission_queue.reset_borders()
-    helper_text.set_text("")
-    helper_text.set_color((0, 0, 0))
+    helper_text.set(text="", color=(0, 0, 0))
     push_button.reset_pressed()
     push_button.set_text("SUBMIT")
     win.flip()

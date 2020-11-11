@@ -14,14 +14,15 @@ from utils.GUI_routines import *
 # Session parameters
 run_num = len([x for x in DATA_DIR.glob("*.csv")])
 stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
-subject_ID = "AYC_TRAIN"
+subject_ID = "AYC"
 n_blocks_per_cond = 1
-n_trials_per_block = 5
+n_trials_per_block = 3
 
 curr_expt = []
 for _ in range(n_blocks_per_cond):
     # Training
     curr_copy = deepcopy(TRAIN_COND)
+    shuffle(curr_copy)
     curr_expt += curr_copy
 
     # # Alternate EM and IM
@@ -32,7 +33,6 @@ for _ in range(n_blocks_per_cond):
     # for i in range(len(curr_EM_copy)):
     #     curr_expt.append(curr_EM_copy[i])
     #     curr_expt.append(curr_IM_copy[i])
-stim_type = expt_type[0].stim_type
 run_stim_order = choose_stim_for_run(stim_database, curr_expt, n_trials_per_block)
 
 # Set save file path and create data structure
@@ -47,7 +47,7 @@ win = visual.Window(fullscr=True, winType="pyglet", monitor="testMonitor", units
 mouse = CustomMouse(win=win)
 word_grid_interface   = WordGridInterface(win, column_len=len(VERBS),
                                           words_in_grid=answer_choices,
-                                          x_offset=-12, y_offset=3,
+                                          x_offset=-6, y_offset=3,
                                           word_box_width=4, word_box_height=1.5)
 answer_queue     = WordQueue(win, n_slots=5, gap=1, width=3, height=1, y_pos=5)
 submission_queue = WordQueue(win, n_slots=5, gap=1, width=3, height=1, y_pos=7.5)
@@ -91,7 +91,7 @@ for block_num, block_stim_order in enumerate(run_stim_order):
         # Display trial number
         trial_txt = "BLOCK {:d}/{:d};\tTRIAL {:d}/{:d}".format(
                      block_num + 1, n_blocks, trial_num + 1, n_trials)
-        helper_text.set_text(text=trial_txt, pos=(0, 5), size=(6, 3))
+        helper_text.set(text=trial_txt, pos=(0, 5), size=(6, 3))
         helper_text.draw()
         win.flip()
 
