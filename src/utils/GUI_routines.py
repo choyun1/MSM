@@ -24,10 +24,10 @@ def make_stim_info_str(cond):
     masker_type = "NOISE SOURCE" if cond.stim_type == "SEM" else "MALE TALKER"
     target_rate, masker_rate = cond.target_alt_rate, cond.masker_alt_rate
     rate_to_speed_map = {0:   "be STATIC and not move",
-                         0.5: "move VERY SLOWLY",
-                         1:   "move SLOWLY",
-                         2:   "move FAST",
-                         5:   "move VERY FAST"}
+                         0.1: "move VERY SLOWLY",
+                         0.5: "move SLOWLY",
+                         1:   "move FAST",
+                         2:   "move VERY FAST"}
     stim_str = "The MASKER will be a {:s}.\n\n"\
                "The TARGET will {:s}.\nThe MASKER will {:s}.\n\n\n\n".format(\
                 masker_type,
