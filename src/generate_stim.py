@@ -40,7 +40,7 @@ for cond in PILOT_V6_CONDS:
             patterns[1] = ""
             snds[1] = ramp_edges(\
                 ALL_WORDS_SPECT.to_Noise(len(snds[0])/snds[0].fs, snds[0].fs),
-                                 noise_ramp)
+                                 noise_ramp) # level is not RMS normalized here
         elif cond.stim_type == "SIM":
             TMR = TMR_IM
         else:
@@ -60,26 +60,27 @@ for cond in PILOT_V6_CONDS:
             masker_init_dir_R = False
         elif rates[0] == rates[1]: # EV conditions
             # Make the masker always 180 deg out of phase
-            # target_init_angle = 180*(np.random.rand() - 0.5)
-            # masker_init_angle = -target_init_angle
-            # target_init_dir_R = np.random.choice([True, False])
-            # masker_init_dir_R = not target_init_dir_R
+            target_init_angle = 180*(np.random.rand() - 0.5)
+            masker_init_angle = -target_init_angle
+            target_init_dir_R = np.random.choice([True, False])
+            masker_init_dir_R = not target_init_dir_R
 
             # Make the masker always follow target 90 degrees after
-            target_init_angle = 180*(np.random.rand() - 0.5)
-            target_init_dir_R = np.random.choice([True, False])
-            if target_init_angle >= 0 and target_init_dir_R:
-                masker_init_angle = target_init_angle - 90
-                masker_init_dir_R = target_init_dir_R
-            elif target_init_angle < 0 and target_init_dir_R:
-                masker_init_angle = -(target_init_angle + 90)
-                masker_init_dir_R = not target_init_dir_R
-            elif target_init_angle < 0 and not target_init_dir_R:
-                masker_init_angle = target_init_angle + 90
-                masker_init_dir_R = target_init_dir_R
-            else:
-                masker_init_angle = 90 - target_init_angle
-                masker_init_dir_R = not target_init_dir_R
+            # Pilot v6
+            # target_init_angle = 180*(np.random.rand() - 0.5)
+            # target_init_dir_R = np.random.choice([True, False])
+            # if target_init_angle >= 0 and target_init_dir_R:
+            #     masker_init_angle = target_init_angle - 90
+            #     masker_init_dir_R = target_init_dir_R
+            # elif target_init_angle < 0 and target_init_dir_R:
+            #     masker_init_angle = -(target_init_angle + 90)
+            #     masker_init_dir_R = not target_init_dir_R
+            # elif target_init_angle < 0 and not target_init_dir_R:
+            #     masker_init_angle = target_init_angle + 90
+            #     masker_init_dir_R = target_init_dir_R
+            # else:
+            #     masker_init_angle = 90 - target_init_angle
+            #     masker_init_dir_R = not target_init_dir_R
         else: # DV conditions
             target_init_angle = 180*(np.random.rand() - 0.5)
             masker_init_angle = 180*(np.random.rand() - 0.5)

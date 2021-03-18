@@ -62,7 +62,7 @@ HL_to_SPL = np.array([45.0, 38.5, 32.5, 27.0, 22.0, 17.0, 13.5, 10.5,
 
 ### Definitions for BUG corpus
 # Define eligible words and talkers
-# Exclude the following talkers based on an email from Gin Best on 05/03/19:
+# Exclude the following talkers based on Gin's email from 05/03/19:
 #   5M, 12M, 4F, 10F
 print("Setting eligible BUG words...")
 ALL_MALE_TALKERS   = ["1M", "2M", "3M", "4M",   "5M",
@@ -157,27 +157,50 @@ Condition = namedtuple("Condition",
 # ALL_CONDITIONS = CONTROL_EM + EXPT_EV_EM + EXPT_DV_EM \
 #                + CONTROL_IM + EXPT_EV_IM + EXPT_DV_IM
 
-PILOT_V6_CONTROLS = [Condition("SEM", 0. , 0. , 45. , 45. ),
+# PILOT_V6_CONTROLS = [Condition("SEM", 0. , 0. , 45. , 45. ),
+#                      Condition("SIM", 0. , 0. , 45. , 45. )]
+# PILOT_V6_EV_EM = [Condition("SEM", 0.1, 0.1, None, None),
+#                   Condition("SEM", 0.5, 0.5, None, None),
+#                   Condition("SEM", 1. , 1. , None, None),
+#                   Condition("SEM", 2. , 2. , None, None)]
+# PILOT_V6_DV_EM = [Condition("SEM", 0.1, 2. , None, None),
+#                   Condition("SEM", 0.5, 1. , None, None),
+#                   Condition("SEM", 1. , 0.5, None, None),
+#                   Condition("SEM", 2. , 0.1, None, None)]
+# PILOT_V6_EV_IM = [Condition("SIM", 0.1, 0.1, None, None),
+#                   Condition("SIM", 0.5, 0.5, None, None),
+#                   Condition("SIM", 1. , 1. , None, None),
+#                   Condition("SIM", 2. , 2. , None, None)]
+# PILOT_V6_DV_IM = [Condition("SIM", 0.1, 2. , None, None),
+#                   Condition("SIM", 0.5, 1. , None, None),
+#                   Condition("SIM", 1. , 0.5, None, None),
+#                   Condition("SIM", 2. , 0.1, None, None)]
+# PILOT_V6_CONDS = PILOT_V6_CONTROLS \
+#                + PILOT_V6_EV_EM + PILOT_V6_DV_EM \
+#                + PILOT_V6_EV_IM + PILOT_V6_DV_IM
+
+PILOT_V7_CONTROLS = [Condition("SEM", 0. , 0. , 45. , 45. ),
                      Condition("SIM", 0. , 0. , 45. , 45. )]
-PILOT_V6_EV_EM = [Condition("SEM", 0.1, 0.1, None, None),
+PILOT_V7_EV_EM = [Condition("SEM", 0.1, 0.1, None, None),
                   Condition("SEM", 0.5, 0.5, None, None),
                   Condition("SEM", 1. , 1. , None, None),
                   Condition("SEM", 2. , 2. , None, None)]
-PILOT_V6_DV_EM = [Condition("SEM", 0.1, 2. , None, None),
+PILOT_V7_DV_EM = [Condition("SEM", 0.1, 2. , None, None),
                   Condition("SEM", 0.5, 1. , None, None),
                   Condition("SEM", 1. , 0.5, None, None),
                   Condition("SEM", 2. , 0.1, None, None)]
-PILOT_V6_EV_IM = [Condition("SIM", 0.1, 0.1, None, None),
+PILOT_V7_EV_IM = [Condition("SIM", 0.1, 0.1, None, None),
                   Condition("SIM", 0.5, 0.5, None, None),
                   Condition("SIM", 1. , 1. , None, None),
                   Condition("SIM", 2. , 2. , None, None)]
-PILOT_V6_DV_IM = [Condition("SIM", 0.1, 2. , None, None),
+PILOT_V7_DV_IM = [Condition("SIM", 0.1, 2. , None, None),
                   Condition("SIM", 0.5, 1. , None, None),
                   Condition("SIM", 1. , 0.5, None, None),
                   Condition("SIM", 2. , 0.1, None, None)]
-PILOT_V6_CONDS = PILOT_V6_CONTROLS \
-               + PILOT_V6_EV_EM + PILOT_V6_DV_EM \
-               + PILOT_V6_EV_IM + PILOT_V6_DV_IM
+PILOT_V7_CONDS = PILOT_V7_CONTROLS \
+               + PILOT_V7_EV_EM + PILOT_V7_DV_EM \
+               + PILOT_V7_EV_IM + PILOT_V7_DV_IM
+
 
 ### Dataframe columns
 STIM_COLUMNS = ["stim_num", "stim_type", "TMR",

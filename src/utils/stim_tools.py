@@ -14,13 +14,13 @@ def compute_attenuation(level, freq=None):
     return db_atten
 
 
-def make_sentence(n_talkers, syntax_condition="syntactic"):
+def make_sentence(n_talkers, cue_name="Sue", syntax_condition="syntactic"):
     from numpy.random import choice
     # Randomly select target and masker talkers and words
     talkers = choice(ELIGIBLE_TALKERS, n_talkers, replace=False)
     if syntax_condition == "syntactic":
         sentence_words = \
-            np.hstack( [choice(list(set(NAMES) - set(["Sue"])),
+            np.hstack( [choice(list(set(NAMES) - set([cue_name])),
                                (n_talkers, 1), replace=False),
                         choice(VERBS,      (n_talkers, 1), replace=False),
                         choice(NUMBERS,    (n_talkers, 1), replace=False),
@@ -29,12 +29,12 @@ def make_sentence(n_talkers, syntax_condition="syntactic"):
     elif syntax_condition == "random":
         non_names = VERBS + NUMBERS + ADJECTIVES + NOUNS
         sentence_words = \
-            np.hstack( [choice(list(set(NAMES) - set(["Sue"])),
+            np.hstack( [choice(list(set(NAMES) - set([cue_name])),
                                (n_talkers, 1), replace=False),
                         choice(non_names, (n_talkers, 4), replace=False)] )
     else:
         raise ValueError("invalid syntax_condition; choose 'syntactic' or 'random'")
-    sentence_words[0, 0] = "Sue"
+    sentence_words[0, 0] = cue_name
     sentence_sounds = [ concat_sounds([ ELIGIBLE_BUG_DICT["_".join([word, talkers[i]])]
                                         for word in sentence_words[i, :] ])
                         for i in range(n_talkers) ]
