@@ -14,27 +14,30 @@ def compute_attenuation(level, freq=None):
     return db_atten
 
 
-def make_sentence(n_talkers, cue_name="Sue", syntax_condition="syntactic"):
+def make_sentence(n_talkers, cue_name=None, syntax_condition="syntactic"):
     from numpy.random import choice
     # Randomly select target and masker talkers and words
     talkers = choice(ELIGIBLE_TALKERS, n_talkers, replace=False)
     if syntax_condition == "syntactic":
         sentence_words = \
-            np.hstack( [choice(list(set(NAMES) - set([cue_name])),
-                               (n_talkers, 1), replace=False),
-                        choice(VERBS,      (n_talkers, 1), replace=False),
-                        choice(NUMBERS,    (n_talkers, 1), replace=False),
-                        choice(ADJECTIVES, (n_talkers, 1), replace=False),
-                        choice(NOUNS,      (n_talkers, 1), replace=False)] )
+            np.hstack([choice([name for name in NAMES if name != cue_name],
+                                  (n_talkers, 1), replace=False),
+                       choice(VERBS,      (n_talkers, 1), replace=False),
+                       choice(NUMBERS,    (n_talkers, 1), replace=False),
+                       choice(ADJECTIVES, (n_talkers, 1), replace=False),
+                       choice(NOUNS,      (n_talkers, 1), replace=False)])
     elif syntax_condition == "random":
         non_names = VERBS + NUMBERS + ADJECTIVES + NOUNS
         sentence_words = \
-            np.hstack( [choice(list(set(NAMES) - set([cue_name])),
-                               (n_talkers, 1), replace=False),
-                        choice(non_names, (n_talkers, 4), replace=False)] )
+            np.hstack([choice([name for name in NAMES if name != cue_name],
+                                  (n_talkers, 1), replace=False),
+                       choice(non_names, (n_talkers, 4), replace=False)])
     else:
         raise ValueError("invalid syntax_condition; choose 'syntactic' or 'random'")
-    sentence_words[0, 0] = cue_name
+
+    if cue_name: # If cue_name is given, change the first sentence to cue
+        sentence_words[0, 0] = cue_name
+
     sentence_sounds = [ concat_sounds([ ELIGIBLE_BUG_DICT["_".join([word, talkers[i]])]
                                         for word in sentence_words[i, :] ])
                         for i in range(n_talkers) ]
@@ -142,30 +145,29 @@ def add_SSN_to_snds(srcs, patterns, snds, difficulty_TMR, SSN_ramp_dur):
 
 
 def make_circular_sinuisoidal_trajectory(spatial_resolution, T_dur, r, elev,
-                                         freq, init_angle, init_dir_R):
+                                         traj_amplitude,
+                                         traj_freq,
+                                         traj_init_cycle,
+                                         traj_displacement):
     """
-    spatial_resolution = average points per degree over the whole trajectory
-    T_dur = duration of the trajectory
-    r = radius [cm]
-    elev = elevation [degrees]
-    freq = frequency of oscillation [Hz]
-    init_angle = initial angle [degrees]; given w.r.t. 0 deg being front;
-                 positive is right hemifield, negative is left hemifield
-                 +/-180 is directly behind
-    init_dir_R = boolean indicating if initial movement direction is + or -
+    spatial_resolution: average points per degree over the whole trajectory
+    T_dur: duration of the trajectory
+    r: radius [cm]
+    elev: elevation [degrees]
+    traj_amplitude: peak-to-peak amplitude of the trajectory [deg]
+    traj_freq: frequency of trajectory [Hz]
+    traj_init_cycle: initial position of the trajectory in a cycle [0, 1)
+    traj_displacement: center of the oscillation (i.e. displacement from origin)
     """
-    # Transform angular coordinates based on initial direction
-    if not init_dir_R and init_angle > 0:
-        init_angle = 180 - init_angle
-    elif not init_dir_R and init_angle < 0:
-        init_angle = -180 - init_angle
-
-    N = int(180*spatial_resolution*T_dur*freq) # number of spatial samples
-    if N == 0:
+    N = int(180*spatial_resolution*T_dur*traj_freq) # number of spatial samples
+    if N == 0: # handle static (i.e. zero) velocity case
+        angular_traj = np.array([0])
         N = 1
-    A = 90
-    t = np.linspace(0, T_dur, N)
-    angular_traj = A*np.sin(2*np.pi*freq*t + 2*np.pi*init_angle/360)
+    else:
+        sin, pi = np.sin, np.pi
+        A, B, C, D = traj_amplitude, traj_freq, traj_init_cycle, traj_displacement
+        t = np.linspace(0, T_dur, N)
+        angular_traj = A*sin(2*pi*B*(t + C/B)) + D
     hcc_coords = np.array([(r, elev, angle) for angle in angular_traj])
     hcc_coords_tuple = list(map(tuple, hcc_coords))
     rect_coords_tuple = [hcc_to_rect(*coords) for coords in hcc_coords_tuple]
