@@ -9,7 +9,7 @@ from utils.stim_tools import *
 n_stim = 100
 
 n_srcs = [2, 3, 4]
-target_freqs = [0.1, 0.5, 2.5]
+target_freqs = []
 spatial_resolution = 2 # average samples per degree over the whole trajectory
 level = 80
 r = 100

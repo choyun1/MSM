@@ -133,7 +133,7 @@ PATTERN_SMALL_IMG_PATHS = [
 STIM_COLUMNS = ["stim_num",
                 "src", "is_target", "pattern",
                 "rate", "init_angle"]
-DATA_COLUMNS = ["run_num", "subject_ID", "stim_type",
+DATA_COLUMNS = ["run_num", "subject_ID",
                 "block_num", "trial_num", "stim_num",
                 "subj_response", "correct",
                 "elapsed_time"]

@@ -15,39 +15,29 @@ from utils.GUI_routines import *
 run_num = len([x for x in DATA_DIR.glob("*.csv")])
 stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
 subject_ID = "AYC"
-n_blocks_per_cond = 1
-n_trials_per_block = 3
-
-curr_expt = []
-for _ in range(n_blocks_per_cond):
-    # Training
-    curr_copy = deepcopy(TRAIN_COND)
-    shuffle(curr_copy)
-    curr_expt += curr_copy
-
-    # # Alternate EM and IM
-    # curr_EM_copy = deepcopy(CONTROL_EM + EXPT_EV_EM + EXPT_DV_EM)
-    # curr_IM_copy = deepcopy(CONTROL_IM + EXPT_EV_IM + EXPT_DV_IM)
-    # shuffle(curr_EM_copy)
-    # shuffle(curr_IM_copy)
-    # for i in range(len(curr_EM_copy)):
-    #     curr_expt.append(curr_EM_copy[i])
-    #     curr_expt.append(curr_IM_copy[i])
-run_stim_order = choose_stim_for_run(stim_database, curr_expt, n_trials_per_block)
+n_srcs = [2, 3, 4]
+targ_rates = [0, 0.1, 0.5, 2.5]
+n_trials_per_block_per_rate = 3
+n_repetitions = 4
+run_stim_order = choose_stim_for_run(stim_database,
+                                     n_srcs,
+                                     targ_rates,
+                                     n_trials_per_block_per_rate,
+                                     n_repetitions)
 
 # Set save file path and create data structure
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"
 save_path = DATA_DIR/file_name
 run_data = pd.DataFrame(columns=DATA_COLUMNS)
-# answer_choices = VERBS + NUMBERS + ADJECTIVES + NOUNS
-answer_choices = sorted(VERBS + NUMBERS + ADJECTIVES + NOUNS)
+answer_choices = NAMES + VERBS + NUMBERS + ADJECTIVES + NOUNS
 
 # Initialize GUI elements
-win = visual.Window(fullscr=True, winType="pyglet", monitor="testMonitor", units="deg")
+win = visual.Window(fullscr=True, winType="pyglet",
+                    monitor="testMonitor", units="deg")
 mouse = CustomMouse(win=win)
 word_grid_interface   = WordGridInterface(win, column_len=len(VERBS),
                                           words_in_grid=answer_choices,
-                                          x_offset=-6, y_offset=3,
+                                          x_offset=-8.5, y_offset=3,
                                           word_box_width=4, word_box_height=1.5)
 answer_queue     = WordQueue(win, n_slots=5, gap=1, width=3, height=1, y_pos=5)
 submission_queue = WordQueue(win, n_slots=5, gap=1, width=3, height=1, y_pos=7.5)
@@ -71,14 +61,13 @@ wait_for_push_button(win, mouse, push_button)
 n_blocks = len(run_stim_order)
 for block_num, block_stim_order in enumerate(run_stim_order):
     # Set ready screen
-    curr_block_cond = curr_expt[block_num]
-    stim_type = curr_block_cond.stim_type
-
     block_num_str = "BLOCK {:d} of {:d}\n\n".format(block_num + 1, n_blocks)
-    stim_info_str = make_stim_info_str(curr_block_cond)
+    # stim_info_str = make_stim_info_str(curr_block_cond)
     press_next_str = "Press 'NEXT' when ready."
-    helper_text.set(text=block_num_str + stim_info_str + press_next_str,
+    helper_text.set(text=block_num_str + press_next_str,
                     pos=(0, 2), size=(10, 6))
+    # helper_text.set(text=block_num_str + stim_info_str + press_next_str,
+    #                 pos=(0, 2), size=(10, 6))
     helper_text.draw()
     push_button.set_text("NEXT")
     push_button.draw()
@@ -95,13 +84,13 @@ for block_num, block_stim_order in enumerate(run_stim_order):
         helper_text.draw()
         win.flip()
 
-        # Make and play stimulus
+        # Play stimulus
         core.wait(0.25)
         stim.play(blocking=True)
 
         # Wait for subject response
         subj_response, correct = \
-            do_recall_task(stim_type, win, mouse, helper_text, push_button,
+            do_recall_task(win, mouse, helper_text, push_button,
                            submission_queue, answer_queue,
                            word_grid_interface, target_pattern_items)
         elapsed_time = expt_timer.getTime()
@@ -110,7 +99,6 @@ for block_num, block_stim_order in enumerate(run_stim_order):
         run_data = run_data.append(
             {"run_num": run_num,
              "subject_ID": subject_ID,
-             "stim_type": stim_type,
              "block_num": block_num + 1,
              "trial_num": trial_num + 1,
              "stim_num": stim_num,
