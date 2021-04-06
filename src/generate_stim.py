@@ -7,16 +7,15 @@ from utils.stim_tools import *
 # SYNTHESIS PARAMETERS
 ################################################################################
 n_stim = 100
-
 n_srcs = [2, 3, 4]
-target_freqs = []
-spatial_resolution = 2 # average samples per degree over the whole trajectory
-level = 80
-r = 100
-elev = 0
+src_spacing = 40.
+target_freq = 2.
+target_traj_amp = [0., 5., 10., 20.]
 
-traj_amplitude = 20
-src_spacing = 40
+spatial_resolution = 2. # average samples per degree over the whole trajectory
+level = 80.
+r = 100.
+elev = 0.
 
 # Load stimulus database
 try:
@@ -30,9 +29,9 @@ except FileNotFoundError:
 # SYNTHESIS ROUTINE
 ################################################################################
 for curr_n in n_srcs:
-    for f in target_freqs:
-        print("\nSynthesizing curr_n = {:d}, targ_freq = {:.1f} Hz stimuli...".format(\
-              curr_n, f))
+    for amp in target_traj_amp:
+        print("\nSynthesizing curr_n = {:d}, targ_amp = {:2.f} deg stimuli...".\
+              format(curr_n, amp))
         for _ in progress_bar(range(n_stim)):
             # Make sources and patterns
             talkers, sentences, snds = make_sentence(curr_n)
@@ -43,30 +42,33 @@ for curr_n in n_srcs:
 
             # Designate target
             target_idx = np.random.randint(curr_n)
-            is_target = np.zeros(curr_n)
-            is_target[target_idx] = 1
-            is_target = np.array(is_target, dtype=bool)
+            is_target = np.zeros(curr_n, dtype=bool)
+            is_target[target_idx] = True
+            amplitudes = np.zeros(curr_n)
+            amplitudes[target_idx] = amp
             rates = np.zeros(curr_n)
-            rates[target_idx] = 1
-            rates = f*rates
+            rates[target_idx] = target_freq
 
             # Set trajectory parameters
-            A = traj_amplitude
-            B = f
-            C = np.random.uniform(size=curr_n)
+            A = amp
+            if A == 0: # static condition
+                B = 0
+            else:
+                B = target_freq
+            C = np.random.choice([0, 0.5]) # initially moving left or right
             D = np.array([src_spacing*i for i in range(curr_n)])
             D = D - D.mean()
 
             # Select target and make the trajectories
             trajs = [make_circular_sinuisoidal_trajectory(\
                          spatial_resolution, t_dur, r, elev,
-                         0, 0, C[i], D[i])
-                     if i != target_idx
+                         A, B, C, D[i])
+                     if target_bool
                      else
                      make_circular_sinuisoidal_trajectory(\
                          spatial_resolution, t_dur, r, elev,
-                         A, B, C[i], D[i])
-                     for i in range(curr_n)]
+                         0, 0, 0, D[i])
+                     for i, target_bool in enumerate(is_target)]
 
             # Move each source
             moved_snds = [move_sound(trajs[i], snds[i]) for i in range(curr_n)]
@@ -81,6 +83,7 @@ for curr_n in n_srcs:
                   "src": talkers[i],
                   "is_target": is_target[i],
                   "pattern": sentences[i],
+                  "amplitude": amplitudes[i],
                   "rate": rates[i],
                   "init_angle": D[i]}
                  for i in range(curr_n)],
