@@ -6,14 +6,14 @@ from utils.stim_tools import *
 ################################################################################
 # SYNTHESIS PARAMETERS
 ################################################################################
-n_stim = 100
+n_stim = 200
 n_srcs = [2, 3, 4]
 src_spacing = 40.
 target_freq = 2.
-target_traj_amp = [0., 5., 10., 20.]
+target_traj_amp = [0., 1.25, 5., 20.]
 
+level = 65.
 spatial_resolution = 2. # average samples per degree over the whole trajectory
-level = 80.
 r = 100.
 elev = 0.
 
@@ -30,8 +30,8 @@ except FileNotFoundError:
 ################################################################################
 for curr_n in n_srcs:
     for amp in target_traj_amp:
-        print("\nSynthesizing curr_n = {:d}, targ_amp = {:2.f} deg stimuli...".\
-              format(curr_n, amp))
+        print("\nSynthesizing curr_n = {:d}, targ_amp = {:2.2f} deg stimuli...".format(\
+              curr_n, amp))
         for _ in progress_bar(range(n_stim)):
             # Make sources and patterns
             talkers, sentences, snds = make_sentence(curr_n)

@@ -1,40 +1,78 @@
 from psychopy import core, event
 
 
+def make_intro():
+    intro_str =\
+        "Thank you for participating in this experiment.\n\n"\
+        "You will be asked to pay attention to a male speaker who sounds as "\
+        "though he is MOVING and report back the sentence he says.\n\n\n"\
+        "Click 'NEXT' to continue."
+    return intro_str
+
+
+def ex1():
+    ex1_str = "Here is an example of a moving talker. Please listen carefully."
+    return ex1_str
+
+
+def ex2():
+    ex2_str = "Here is another example of a moving talker."
+    return ex2_str
+
+
+def ex3():
+    ex3_str = \
+        "In the actual experiment, you will have to listen for the moving "\
+        "talker among one or more other stationary talkers in the audio.\n\n"\
+        "This is an example with 2 talkers. Press 'PLAY' when ready.\n\n\n"
+    return ex3_str
+
+
+def ex4():
+    ex4_str = \
+        "Notice that the talkers should sound as though they are coming from "\
+        "different locations.\n\n"\
+        "Here is another example. Press 'PLAY' when ready.\n\n\n"
+    return ex4_str
+
+
+def ex5():
+    ex5_str = \
+        "Here is another example, this time with more talkers.\n\n\n"
+    return ex5_str
+
+
+def ex6():
+    ex6_str = \
+        "The degree of motion may change from trial to trial. Here is an "\
+        "example of a talker with small amount of movement.\n\n\n"
+    return ex6_str
+
+
+def ex7():
+    ex7_str = \
+        "Here is a final example with more talkers.\n\n\n"
+    return ex7_str
+
+
+def warning():
+    warn_str = \
+        "In some cases, the motion of the moving talker may be so slight "\
+        "as to be unnoticeable. When that happens, you will have to guess "\
+        "the identity of the moving talker and report back his words.\n\n"\
+        "It may take some time and practice throughout the experiment to "\
+        "become proficient at this task.\n\n\n"\
+        "Click 'NEXT' to continue."
+    return warn_str
+
+
 def make_task_instruction():
-    task_instr_str = "Press 'NEXT' when ready."
-    # task_instr_str =\
-    #     "Thank you for participating in this experiment!\n\n"\
-    #     "This is a speech intelligibility task. You will simultaneously "\
-    #     "hear ONE MALE TARGET TALKER and ONE MASKER. The masker may be "\
-    #     "another male talker or a noise source, and you will be informed "\
-    #     "before the start of each block which will be used.\n\n"\
-    #     "You may hear the sounds coming from different locations, and the "\
-    #     "sounds may move around your head. You will be informed if and how "\
-    #     "quickly the sounds will move before the start of each block.\n\n"\
-    #     "The target talker will always begin his sentence with the name 'SUE', "\
-    #     "followed by a RANDOM string of 4 words. Ignore the masker, and respond "\
-    #     "using the word grid interface that appears after the sound is played. "\
-    #     "You may report back the words spoken by the target talker in ANY "\
-    #     "ORDER.\n\n\n"\
-    #     "Press 'NEXT' when ready."
+    task_instr_str =\
+        "Now we will begin the experiment. Before each block, you will be "\
+        "informed about the number of talkers in the audio. The amount of "\
+        "motion in the moving talker will vary from trial to trial.\n\n\n"\
+        "Click 'START' when you are ready to begin."
     return task_instr_str
-
-
-# def make_stim_info_str(cond):
-#     masker_type = "NOISE SOURCE" if cond.stim_type == "SEM" else "MALE TALKER"
-#     target_rate, masker_rate = cond.target_alt_rate, cond.masker_alt_rate
-#     rate_to_speed_map = {0:   "be STATIC and not move",
-#                          0.1: "move VERY SLOWLY",
-#                          0.5: "move SLOWLY",
-#                          1:   "move FAST",
-#                          2:   "move VERY FAST"}
-#     stim_str = "The MASKER will be a {:s}.\n\n"\
-#                "The TARGET will {:s}.\nThe MASKER will {:s}.\n\n\n\n".format(\
-#                 masker_type,
-#                 rate_to_speed_map[target_rate],
-#                 rate_to_speed_map[masker_rate])
-#     return stim_str
 
 
 def exit_program(win):
@@ -108,6 +146,7 @@ def do_recall_task(win, mouse, helper_text, push_button,
                    grid_interface, target_patterns):
     # Reset GUI elements
     answer_queue.reset()
+    answer_queue.reset_borders()
     submission_queue.reset()
     submission_queue.reset_borders()
     helper_text.set(text="", color=(0, 0, 0))
@@ -119,7 +158,6 @@ def do_recall_task(win, mouse, helper_text, push_button,
     n_slots = len(target_patterns)
     for item in target_patterns:
         answer_queue.insert(item)
-    # submission_queue.insert(target_patterns[0]) # always insert correct pattern
 
     # Wait for user response using the grid interface
     grid_logic(win, mouse, push_button, helper_text, n_slots, submission_queue,
@@ -131,36 +169,15 @@ def do_recall_task(win, mouse, helper_text, push_button,
         sum(answer_queue.queue_items[i] == submission_queue.queue_items[i]
             for i in range(0, n_slots))
     # Compare the answer and submission one by one to toggle feedback color
-    for i in range(0, n_slots):
-        if answer_queue.queue_items[i] == submission_queue.queue_items[i]:
-            submission_queue.set_border_color(i, (0, 255, 0))
-        else:
-            submission_queue.set_border_color(i, (255, 0, 0))
-        submission_queue.toggle_border(i)
-
-    # ### Scoring for answer in ANY ORDER
-    # # Score subject responses, minus the first constant pattern
-    # answer_set = set(answer_queue.queue_items[1:])
-    # submission_set = set(submission_queue.queue_items[1:])
-    # subj_response_correct = len(answer_set.intersection(submission_set))
-    # # Compare the answer and submission one by one to toggle feedback color
-    # for i in range(1, n_slots):
-    #     if submission_queue.queue_items[i] in answer_set:
-    #         submission_queue.set_border_color(i, (0, 255, 0))
+    # for i in range(0, n_slots):
+    #     if answer_queue.queue_items[i] == submission_queue.queue_items[i]:
+    #         submission_queue.set_border_color(i, (0, 0, 255))
     #     else:
     #         submission_queue.set_border_color(i, (255, 0, 0))
     #     submission_queue.toggle_border(i)
 
-    # Display answer and feedback
-    helper_text.set(text="CORRECT ANSWERS", pos=(0, 3))
-    helper_text.draw()
-    answer_queue.draw()
-    submission_queue.draw()
-    win.flip()
-    core.wait(0.5)
-
-    # Re-draw elements for waiting
-    helper_text.set(text="Press 'NEXT' to continue", pos=(0, -2))
+    # Display feedback and ready
+    helper_text.set(text="CORRECT ANSWERS\n\n\nPress 'NEXT' to continue", pos=(0, -2))
     helper_text.draw()
     push_button.set_text("NEXT")
     push_button.enable()

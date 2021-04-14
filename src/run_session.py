@@ -1,6 +1,3 @@
-from copy import deepcopy
-from random import shuffle
-
 # Project imports
 from utils.init_constants import *
 from utils.stim_tools import *
@@ -15,15 +12,15 @@ from utils.GUI_routines import *
 run_num = len([x for x in DATA_DIR.glob("*.csv")])
 stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
 subject_ID = "AYC"
-n_srcs = [2, 3, 4]
-targ_rates = [0, 0.1, 0.5, 2.5]
-n_trials_per_block_per_rate = 3
-n_repetitions = 4
-run_stim_order = choose_stim_for_run(stim_database,
-                                     n_srcs,
-                                     targ_rates,
-                                     n_trials_per_block_per_rate,
-                                     n_repetitions)
+n_srcs = np.array([2, 3, 4])
+targ_amps = np.array([0., 1.25, 5., 20.])
+n_trials_per_block_per_amp = 5
+run_stim_order, src_order = \
+    choose_stim_for_run(stim_database,
+                        n_srcs,
+                        targ_amps,
+                        n_trials_per_block_per_amp,
+                        balanced=True)
 
 # Set save file path and create data structure
 file_name = "RUN_" + str(run_num).zfill(3) + ".csv"
@@ -47,13 +44,171 @@ push_button = PushButton(win)
 ################################################################################
 # RUN EXPT LOOP
 ################################################################################
+# Pre-generate example stimuli
+ex1_stim = make_ex(1, 20)
+ex2_stim = make_ex(1, 20)
+ex3_stim = make_ex(2, 20)
+ex4_stim = make_ex(2, 20)
+ex5_stim = make_ex(4, 20)
+ex6_stim = make_ex(1, 1.25)
+ex7_stim = make_ex(3, 1.25)
+
+# Start timer
 expt_timer = core.Clock()
 
-# Show task instructions
-task_instruction_str = make_task_instruction()
-helper_text.set(text=task_instruction_str, pos=((0, 0)), size=(12, 8))
+######
+# Intro screen
+intro_str = make_intro()
+helper_text.set(text=intro_str, pos=(0, 0))
 helper_text.draw()
 push_button.set_text("NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+######
+# Example 1
+ex1_str = ex1()
+helper_text.set(text=ex1_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+win.flip()
+core.wait(2)
+ex1_stim.play(blocking=True)
+core.wait(0.5)
+helper_text.draw()
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+######
+# Example 2
+ex2_str = ex2()
+helper_text.set(text=ex2_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+win.flip()
+core.wait(2)
+ex2_stim.play(blocking=True)
+core.wait(0.5)
+helper_text.draw()
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+######
+# Example 3
+ex3_str = ex3()
+helper_text.set(text=ex3_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+push_button.set_text("PLAY")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+helper_text.draw()
+win.flip()
+ex3_stim.play(blocking=True)
+core.wait(0.5)
+helper_text.draw()
+push_button.set_text("NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+######
+# Example 4
+ex4_str = ex4()
+helper_text.set(text=ex4_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+push_button.set_text("PLAY")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+helper_text.draw()
+win.flip()
+ex4_stim.play(blocking=True)
+core.wait(0.5)
+helper_text.draw()
+push_button.set_text("NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+######
+# Example 5
+ex5_str = ex5()
+helper_text.set(text=ex5_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+push_button.set_text("PLAY")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+helper_text.draw()
+win.flip()
+ex5_stim.play(blocking=True)
+core.wait(0.5)
+helper_text.draw()
+push_button.set_text("NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+
+######
+# Example 6
+ex6_str = ex6()
+helper_text.set(text=ex6_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+push_button.set_text("PLAY")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+helper_text.draw()
+win.flip()
+ex6_stim.play(blocking=True)
+core.wait(0.5)
+helper_text.draw()
+push_button.set_text("NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+
+######
+# Example 7
+ex7_str = ex7()
+helper_text.set(text=ex7_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+push_button.set_text("PLAY")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+helper_text.draw()
+win.flip()
+ex7_stim.play(blocking=True)
+core.wait(0.5)
+helper_text.draw()
+push_button.set_text("NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+
+#####
+# Warning
+warn_str = warning()
+helper_text.set(text=warn_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+push_button.set_text("NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+
+#####
+# Show task instructions
+task_instruction_str = make_task_instruction()
+helper_text.set(text=task_instruction_str, pos=(0, 0), size=(16, 8))
+helper_text.draw()
+push_button.set_text("START")
 push_button.draw()
 win.flip()
 wait_for_push_button(win, mouse, push_button)
@@ -61,13 +216,11 @@ wait_for_push_button(win, mouse, push_button)
 n_blocks = len(run_stim_order)
 for block_num, block_stim_order in enumerate(run_stim_order):
     # Set ready screen
-    block_num_str = "BLOCK {:d} of {:d}\n\n".format(block_num + 1, n_blocks)
-    # stim_info_str = make_stim_info_str(curr_block_cond)
-    press_next_str = "Press 'NEXT' when ready."
-    helper_text.set(text=block_num_str + press_next_str,
-                    pos=(0, 2), size=(10, 6))
-    # helper_text.set(text=block_num_str + stim_info_str + press_next_str,
-    #                 pos=(0, 2), size=(10, 6))
+    block_str = \
+        "BLOCK {:d} of {:d}\n\n"\
+        "There will be {:d} talkers in this block.\n\n\n"\
+        "Click 'NEXT' when ready.".format(block_num + 1, n_blocks, src_order[block_num])
+    helper_text.set(text=block_str, pos=(0, 2), size=(16, 6))
     helper_text.draw()
     push_button.set_text("NEXT")
     push_button.draw()
