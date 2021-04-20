@@ -13,7 +13,7 @@ run_num = len([x for x in DATA_DIR.glob("*.csv")])
 stim_database = pd.read_csv(STIM_DIR/"stimulus_database.csv")
 subject_ID = "AYC"
 n_srcs = np.array([2, 3, 4])
-targ_amps = np.array([0., 1.25, 5., 20.])
+targ_amps = np.array([0., 15., 30.])
 n_trials_per_block_per_amp = 5
 run_stim_order, src_order = \
     choose_stim_for_run(stim_database,
@@ -45,13 +45,13 @@ push_button = PushButton(win)
 # RUN EXPT LOOP
 ################################################################################
 # Pre-generate example stimuli
-ex1_stim = make_ex(1, 20)
-ex2_stim = make_ex(1, 20)
-ex3_stim = make_ex(2, 20)
-ex4_stim = make_ex(2, 20)
-ex5_stim = make_ex(4, 20)
-ex6_stim = make_ex(1, 1.25)
-ex7_stim = make_ex(3, 1.25)
+ex1_stim = make_ex(1, 30)
+ex2_stim = make_ex(1, 30)
+ex3_stim = make_ex(2, 30)
+ex4_stim = make_ex(2, 30)
+ex5_stim = make_ex(4, 30)
+ex6_stim = make_ex(1, 15)
+ex7_stim = make_ex(3, 15)
 
 # Start timer
 expt_timer = core.Clock()
@@ -238,6 +238,7 @@ for block_num, block_stim_order in enumerate(run_stim_order):
         win.flip()
 
         # Play stimulus
+        stim += 30
         core.wait(0.25)
         stim.play(blocking=True)
 

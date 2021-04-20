@@ -10,7 +10,7 @@ n_stim = 200
 n_srcs = [2, 3, 4]
 src_spacing = 40.
 target_freq = 2.
-target_traj_amp = [0., 1.25, 5., 20.]
+target_traj_amp = [15., 30.]
 
 level = 65.
 spatial_resolution = 2. # average samples per degree over the whole trajectory
