@@ -20,45 +20,53 @@ class CustomMouse(event.Mouse):
 
 
 class SupportText:
-    def __init__(self, win):
+    def __init__(self, win, text="", color=(0, 0, 0), pos=(0, 0)):
         text_stim = \
             visual.TextStim(
                 win,
-                text="",
-                pos=(0, 0),
-                color=(0, 0, 0),
-                colorSpace="rgb255"
+                text=text,
+                color=color,
+                colorSpace="rgb255",
+                pos=pos
             )
         self.text_stim = text_stim
 
-    def set(self, text=None, color=None, pos=None, size=None):
+    def set(self, text=None, color=None, pos=None):
         if text:
             self.text_stim.text = text
         if color:
             self.text_stim.color = color
         if pos:
             self.text_stim.pos = pos
-        if size:
-            self.text_stim.size = size
 
     def draw(self):
         self.text_stim.draw()
 
 
 class PushButton:
-    def __init__(self, win, pos=(0, -10)):
+    def __init__(self, win, text="", color=(0, 0, 0), pos=(0, 0), size=(0.4, 0.2)):
         button_box = visual.Rect(
-            win, width=5, height=2, pos=pos,
-            lineColor=(180, 180, 180), lineColorSpace="rgb255",
+            win, width=size[0], height=size[1], pos=pos,
+            lineColor=(150, 150, 150), lineColorSpace="rgb255",
             fillColor=(200, 200, 200), fillColorSpace="rgb255")
-        button_txt = visual.TextStim(
-            win, text="", pos=pos,
-            color=(0, 0, 0), colorSpace="rgb255")
+        button_txt = visual.TextStim(win, text=text,
+                                     color=color, colorSpace="rgb255", pos=pos)
         self.win = win
         self.button_box = button_box
         self.button_txt = button_txt
         self.enabled = True
         self.pressed = False
+
+    def set(self, text=None, color=None, pos=None, size=None):
+        if text:
+            self.button_txt.text = text
+        if color:
+            self.button_txt.color = color
+        if pos:
+            self.button_box.pos = pos
+            self.button_txt.pos = pos
+        if size:
+            self.button_box.width, self.button_box.height = size
 
     def contains(self, pos):
         """Wrapper for contains method"""
@@ -81,20 +89,14 @@ class PushButton:
         """Resets button press status to unpressed"""
         self.pressed = False
 
-    def is_enabled(self):
-        """Check if the push button is enabled"""
-        return self.enabled
-
     def enable(self):
         """Enable push button"""
         self.enabled = True
-        curr_text = self.button_txt.text
         self.button_txt.color = (0, 0, 0)
 
     def disable(self):
         """Disable push button"""
         self.enabled = False
-        curr_text = self.button_txt.text
         self.button_txt.color = (150, 150, 150)
 
     def toggle_enable(self):
@@ -104,17 +106,13 @@ class PushButton:
         else:
             self.enable()
 
+    def is_enabled(self):
+        """Check if the push button is enabled"""
+        return self.enabled
+
     def reset_enable(self):
         """Reset enable for push button; same as enabling"""
         self.enable()
-
-    def set_text(self, text_str):
-        """Set the text string for the box"""
-        self.button_txt.text = text_str
-
-    def reset_text(self):
-        """Reset the text string for the box"""
-        self.button_txt.text = ""
 
 
 class Queue(ABC):
@@ -122,9 +120,11 @@ class Queue(ABC):
         borders = [visual.Rect( \
                      win,
                      width=width, height=height,
-                     pos=(-n_slots*width/2 + (i - 1)*(gap + width),   y_pos),
-                     lineColor=(0, 255, 0), lineColorSpace="rgb255",
-                     fillColor=(0, 255, 0), fillColorSpace="rgb255",
+                     pos=(-0.25 + (i - 1)*(gap + width), y_pos),
+                     lineColor=(127, 127, 127),
+                     fillColor=(127, 127, 127),
+                     lineColorSpace="rgb255",
+                     fillColorSpace="rgb255",
                      opacity=0.)
                    for i in range(n_slots)]
         self.win = win
@@ -158,12 +158,12 @@ class Queue(ABC):
             self.borders[i].opacity = 0
 
     def set_border_color(self, i, color):
-        self.borders[i].color = color
+        self.borders[i].lineColor = color
 
     def reset_borders(self):
         for border in self.borders:
             border.opacity = 0
-            border.color = (0, 0, 0)
+            border.lineColor = (0, 0, 0)
 
 
 class WordQueue(Queue):
@@ -172,7 +172,7 @@ class WordQueue(Queue):
         self.visual_elems = [
             visual.TextStim( \
                 win, height=0.8*height, text="",
-                pos=(-n_slots*width/2 + (i - 1)*(gap + width),   y_pos),
+                pos=(-0.25 + (i - 1)*(gap + width), y_pos),
                 color=(0, 0, 0), colorSpace="rgb255")
             for i in range(n_slots)]
 
@@ -220,6 +220,19 @@ class TonePatternQueue(Queue):
             self.curr_queue_pos += 1
 
 
+class AFCInterface:
+    def __init__(self, win):
+        choice_buttons = [PushButton(win, text="LEFT",   pos=(-0.5, -0.7)),
+                          PushButton(win, text="CENTER", pos=(   0, -0.7)),
+                          PushButton(win, text="RIGHT",  pos=( 0.5, -0.7))]
+        self.win = win
+        self.choice_buttons = choice_buttons
+
+    def draw(self):
+        for button in self.choice_buttons:
+            button.draw()
+
+
 class WordGridInterface:
     def __init__(self, win, column_len, words_in_grid,
                  x_offset, y_offset,
@@ -244,7 +257,7 @@ class WordGridInterface:
                 text=word.upper(),
                 color=(0, 0, 0),
                 colorSpace="rgb255",
-                height=0.8,
+                height=0.08,
                 pos=( (i//column_len)*word_box_width  + x_offset,
                      -(i %column_len)*word_box_height + y_offset) )
             for i, word in enumerate(words_in_grid)

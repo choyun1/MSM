@@ -7,10 +7,10 @@ from utils.stim_tools import *
 # SYNTHESIS PARAMETERS
 ################################################################################
 n_stim = 200
-n_srcs = [2, 3, 4]
+n_srcs = [3]
 src_spacing = 40.
 target_freq = 2.
-target_traj_amp = [15., 30.]
+target_traj_amp = [0., 5., 10., 15., 20., 25. 30.]
 
 level = 65.
 spatial_resolution = 2. # average samples per degree over the whole trajectory

@@ -26,6 +26,7 @@ else:
     raise ValueError("\nunexpected operating system!\nuse 'linux' or 'win32'")
 sys.path.append(str(SIGTOOLS_DIR))
 DATA_DIR = PROJ_DIR/"data"
+EXMP_DIR = PROJ_DIR/"assets"/"ex"
 STIM_DIR = PROJ_DIR/"assets"/"stimuli"
 IMGS_DIR = PROJ_DIR/"assets"/"img"
 
@@ -123,17 +124,11 @@ PATTERN_SMALL_IMG_PATHS = [
 ]
 
 
-### Experimental conditions
-# from collections import namedtuple
-# print("Defining experimental conditions...")
-# Condition = namedtuple("Condition",
-#                        "stim_type target_alt_rate masker_alt_rate target_init_angle masker_init_angle")
-
 ### Dataframe columns
 STIM_COLUMNS = ["stim_num",
                 "src", "is_target", "pattern",
                 "amplitude", "rate", "init_angle"]
-DATA_COLUMNS = ["run_num", "subject_ID",
+DATA_COLUMNS = ["run_num", "task_type", "subject_ID",
                 "block_num", "trial_num", "stim_num",
                 "subj_response", "correct",
                 "elapsed_time"]
