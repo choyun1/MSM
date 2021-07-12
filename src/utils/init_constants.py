@@ -125,10 +125,10 @@ PATTERN_SMALL_IMG_PATHS = [
 
 
 ### Dataframe columns
-STIM_COLUMNS = ["stim_num",
+STIM_COLUMNS = ["stim_num", "stim_type", "nominal_level",
                 "src", "is_target", "pattern",
                 "amplitude", "rate", "init_angle"]
-DATA_COLUMNS = ["run_num", "task_type", "subject_ID",
+DATA_COLUMNS = ["run_num", "subject_ID", "stim_type", "task_type",
                 "block_num", "trial_num", "stim_num",
                 "subj_response", "correct",
                 "elapsed_time"]

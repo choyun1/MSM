@@ -6,8 +6,20 @@ def exit_program(win):
     core.quit()
 
 
-def make_tutorial_strs(task_type):
-    if task_type == "motion_detection":
+def make_tutorial_strs(task_type, stim_type):
+    if stim_type == "SMN":
+        intro_str = ""
+        ex1_str = ""
+        return intro_str,\
+               ex1_str,\
+               ex2_str,\
+               ex3_str,\
+               ex4_str,\
+               ex5_str,\
+               ex6_str,\
+               warn_str,\
+               final_str
+    elif task_type == "motion_detection":
         intro_str = \
             "Thank you for your participation!\n\n"\
             "The first part of this experiment is a MOTION DETECTION task. We "\

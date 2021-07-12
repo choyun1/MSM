@@ -17,11 +17,14 @@ n_srcs = np.array([3])
 targ_amps = np.array([0., 15., 30.])
 
 ## CHOOSE TASK TYPE
-# task_type = "motion_detection"
-task_type = "speech_intelligibility"
+task_type = "motion_detection"
+# task_type = "speech_intelligibility"
+# stim_type = "BUG"
+stim_type = "SMN"
 n_trials_per_amp = 60
 n_trials = len(targ_amps)*n_trials_per_amp
-run_stim_order = choose_stim_for_run(stim_database,
+run_stim_order = choose_stim_for_run(stim_type,
+                                     stim_database,
                                      targ_amps,
                                      n_trials_per_amp)
 
@@ -52,10 +55,126 @@ answer_queue  = WordQueue(win, n_slots=5, gap=0.05, width=0.2, height=0.125, y_p
 
 ################################################################################
 ################################################################################
-if task_type == "motion_detection":
+if stim_type == "SMN":
+    # ###
+    # # TUTORIAL
+    # tutorial_strs = make_tutorial_strs(task_type, stim_type)
+    #
+    # # Read in examples
+    # for f in sorted(os.listdir(EXMP_DIR)):
+    #     if f.startswith("detection") and f.endswith(".txt"):
+    #         with open(EXMP_DIR/f, "r") as fin:
+    #             lines = fin.readlines()
+    # ex_target_idxs = [int(i) for i in lines]
+    # ex_stims = [SoundLoader(EXMP_DIR/f) for f in sorted(os.listdir(EXMP_DIR))
+    #             if f.startswith("detection") and
+    #                f.endswith(".wav")]
+    #
+    # for i, curr_str in enumerate(tutorial_strs):
+    #     if i == 0: # Intro screen
+    #         helper_text.set(text=curr_str, pos=(0, 0.2))
+    #         helper_text.draw()
+    #         push_button.set(text="NEXT")
+    #         push_button.draw()
+    #         win.flip()
+    #         wait_for_push_button(win, mouse, push_button)
+    #     elif i == 1 or i == 2: # Examples 1 & 2
+    #         curr_stim = ex_stims[i - 1]
+    #         helper_text.set(text=curr_str, pos=(0, 0))
+    #         helper_text.draw()
+    #         win.flip()
+    #         core.wait(2)
+    #         curr_stim.play(blocking=True)
+    #         core.wait(0.5)
+    #         helper_text.draw()
+    #         push_button.draw()
+    #         win.flip()
+    #         wait_for_push_button(win, mouse, push_button)
+    #     elif i == 3 or i == 4 or i == 5 or i == 6: # Example 3-6
+    #         curr_targ_idx = ex_target_idxs[i - 1]
+    #         curr_stim = ex_stims[i - 1]
+    #         helper_text.set(text=curr_str)
+    #         helper_text.draw()
+    #         push_button.set(text="PLAY")
+    #         push_button.draw()
+    #         win.flip()
+    #         wait_for_push_button(win, mouse, push_button)
+    #         helper_text.draw()
+    #         win.flip()
+    #         curr_stim.play(blocking=True)
+    #         core.wait(0.5)
+    #
+    #         helper_text.set(text=" ", pos=(0, -0.2))
+    #         _, _ = \
+    #             do_detection_task(win, mouse, push_button, helper_text,
+    #                               afc_interface, curr_targ_idx)
+    #
+    #         helper_text.draw()
+    #         push_button.set(text="NEXT")
+    #         push_button.draw()
+    #         win.flip()
+    #         wait_for_push_button(win, mouse, push_button)
+    #     else: # warn_str and final_str
+    #         helper_text.set(text=curr_str)
+    #         helper_text.draw()
+    #         push_button.set(text="NEXT")
+    #         push_button.draw()
+    #         win.flip()
+    #         wait_for_push_button(win, mouse, push_button)
+
+    #####
+    # Main experiment section - detection task
+    task_instruction_str =\
+        "Now we will begin the experiment. As in the tutorial, please "\
+        "identify the moving talker. The amount of motion in the moving "\
+        "talker may vary from trial to trial.\n\n\n"\
+        "Press 'START' when you are ready to begin."
+    helper_text.set(text=task_instruction_str, pos=(0, 0.2))
+    helper_text.draw()
+    push_button.set(text="START")
+    push_button.draw()
+    win.flip()
+    wait_for_push_button(win, mouse, push_button)
+
+    # Main loop
+    for trial_num, (stim_num, stim, target_idx, _) in enumerate(run_stim_order):
+        # Display trial number
+        trial_txt = "Trial {:d} of {:d}".format(trial_num + 1, n_trials)
+        helper_text.set(text=trial_txt, pos=(0, 0.75))
+        helper_text.draw()
+        win.flip()
+
+        # Play stimulus
+        core.wait(0.25)
+        stim.play(blocking=True)
+
+        # Wait for subject response
+        subj_response, correct = \
+            do_detection_task(win, mouse, push_button, helper_text,
+                              afc_interface, target_idx)
+        elapsed_time = session_timer.getTime()
+
+        # Save data
+        run_data = run_data.append(
+            {"run_num": run_num,
+             "subject_ID": subject_ID,
+             "stim_type": stim_type,
+             "task_type": task_type,
+             "block_num": 0,
+             "trial_num": trial_num + 1,
+             "stim_num": stim_num,
+             "subj_response": subj_response_str,
+             "correct": correct,
+             "elapsed_time": elapsed_time},
+             ignore_index=True)
+        run_data.to_csv(save_path, index=False)
+
+################################################################################
+################################################################################
+elif task_type == "motion_detection":
     ###
     # TUTORIAL
-    tutorial_strs = make_tutorial_strs(task_type)
+    tutorial_strs = make_tutorial_strs(task_type, stim_type)
 
     # Read in examples
     for f in sorted(os.listdir(EXMP_DIR)):
@@ -154,12 +273,13 @@ if task_type == "motion_detection":
         # Save data
         run_data = run_data.append(
             {"run_num": run_num,
-             "task_type": task_type,
              "subject_ID": subject_ID,
+             "stim_type": stim_type,
+             "task_type": task_type,
              "block_num": 0,
              "trial_num": trial_num + 1,
              "stim_num": stim_num,
-             "subj_response": subj_response,
+             "subj_response": subj_response_str,
              "correct": correct,
              "elapsed_time": elapsed_time},
              ignore_index=True)
@@ -170,7 +290,7 @@ if task_type == "motion_detection":
 elif task_type == "speech_intelligibility":
     ###
     # TUTORIAL
-    tutorial_strs = make_tutorial_strs(task_type)
+    tutorial_strs = make_tutorial_strs(task_type, stim_type)
 
     # Read in examples
     for f in sorted(os.listdir(EXMP_DIR)):
@@ -181,13 +301,14 @@ elif task_type == "speech_intelligibility":
     ex_stims = [SoundLoader(EXMP_DIR/f) for f in sorted(os.listdir(EXMP_DIR))
                 if f.startswith("speech_ID") and
                    f.endswith(".wav")]
-    # Hardcoded answers
-    speech_ID_ex_answers = ["JANE SAW NINE GREEN HATS",
-                            "MIKE FOUND NINE RED CARDS",
-                            "JILL LOST NINE NEW GLOVES",
-                            "BOB FOUND TEN SMALL SHOES",
-                            "SAM LOST NINE RED PENS",
-                            "SUE GAVE FIVE GREEN GLOVES"]
+    # Hardcoded answers to example stimuli
+    # MUST BE UPDATED EVERY TIME NEW EXAMPLES ARE MADE
+    speech_ID_ex_answers = ["MIKE GAVE THREE CHEAP SHOES",
+                            "BOB TOOK THREE BIG TOYS",
+                            "LYNN LOST NINE RED HATS",
+                            "JANE GAVE TEN HOT HATS",
+                            "SAM SAW SIX RED SHOES",
+                            "JANE BOUGHT TWO SMALL SHOES"]
 
     for i, curr_str in enumerate(tutorial_strs):
         if i == 0: # Intro screen
@@ -264,8 +385,9 @@ elif task_type == "speech_intelligibility":
         # Save data
         run_data = run_data.append(
             {"run_num": run_num,
-             "task_type": task_type,
              "subject_ID": subject_ID,
+             "stim_type": stim_type,
+             "task_type": task_type,
              "block_num": 0,
              "trial_num": trial_num + 1,
              "stim_num": stim_num,

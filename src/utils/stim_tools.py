@@ -204,53 +204,8 @@ def generate_latin_square(n, balanced=False):
         return l
 
 
-def make_motion_examples(curr_n, traj_amp):
-    spatial_resolution = 2 # average samples per degree over the whole trajectory
-    level = 80
-    r = 100
-    elev = 0
-    f = 2.
-    src_spacing = 40
-
-    talkers, sentences, snds = make_sentence(curr_n)
-    snds = zeropad_sounds(snds)
-    snds = normalize_rms(snds)
-    snds = [snd.make_binaural() for snd in snds]
-    t_dur = len(snds[0])/snds[0].fs
-
-    # Designate target
-    target_idx = np.random.randint(curr_n)
-    is_target = np.zeros(curr_n, dtype=bool)
-    is_target[target_idx] = True
-    rates = np.zeros(curr_n)
-    rates[target_idx] = f
-
-    # Set canonical trajectory parameters
-    A = traj_amp
-    B = f
-    C = np.random.choice([0, 0.5])
-    D = np.array([src_spacing*i for i in range(curr_n)])
-    D = D - D.mean()
-
-    # Select target and make the trajectories
-    trajs = [make_circular_sinuisoidal_trajectory(\
-                 spatial_resolution, t_dur, r, elev,
-                 A, B, C, D[i])
-             if target
-             else
-             make_circular_sinuisoidal_trajectory(\
-                 spatial_resolution, t_dur, r, elev,
-                 0, 0, 0, D[i])
-             for i, target in enumerate(is_target)]
-
-    # Move each source
-    moved_snds = [move_sound(trajs[i], snds[i]) for i in range(curr_n)]
-    combined_moved_snds = normalize_rms([sum(moved_snds)])[0]
-    stimulus = combined_moved_snds + compute_attenuation(level)
-    return target_idx, stimulus
-
-
-def choose_stim_for_run(stim_df, targ_amps, n_trials_per_amp):
+def choose_stim_for_run(stim_type, stim_df, targ_amps, n_trials_per_amp):
+    stim_df = stim_df[stim_df["stim_type"] == stim_type].reset_index(drop=True)
     n_trials = len(targ_amps)*n_trials_per_amp
     grouped_by_count = stim_df.groupby("stim_num").count()
     n_talker_3_idx = grouped_by_count[grouped_by_count["src"] == 3].index.values
@@ -259,8 +214,9 @@ def choose_stim_for_run(stim_df, targ_amps, n_trials_per_amp):
     # Draw stim_nums
     drawn_stim_nums = []
     for curr_amp in targ_amps:
-        curr_amp_stim_nums = list(set(\
-            stim_df_3_talkers[stim_df_3_talkers["amplitude"] == curr_amp]["stim_num"].values))
+        curr_amp_stim_nums = \
+            stim_df_3_talkers[(stim_df_3_talkers["amplitude"] == curr_amp) &
+                               stim_df_3_talkers["is_target"]]["stim_num"].values
         curr_draw = np.random.choice(curr_amp_stim_nums,
                                      n_trials_per_amp,
                                      replace=False)
@@ -277,51 +233,3 @@ def choose_stim_for_run(stim_df, targ_amps, n_trials_per_amp):
                                (stim_df["is_target"])]["pattern"].values[0]
         stim_list.append((stim_num, curr_stim, curr_targ_idx, curr_pattern))
     return stim_list
-
-
-# def choose_stim_for_run(stim_df,
-#                         n_srcs,
-#                         targ_amps,
-#                         n_trials_per_block_per_amp,
-#                         balanced):
-#     latin_sq = generate_latin_square(len(n_srcs), balanced=balanced).flatten()
-#     src_order_list = n_srcs[latin_sq]
-#     n_repetitions = len(src_order_list)
-#     n_draw = n_trials_per_block_per_amp*n_repetitions
-#
-#     # First, randomly draw stim numbers for each condition
-#     conditions = [(src, amp) for src in n_srcs for amp in targ_amps]
-#     grouped_by_count = stim_df.groupby("stim_num").count()
-#     is_target = stim_df[stim_df["is_target"]]
-#     stim_nums_by_condition = []
-#     for n_src, amp in conditions:
-#         curr_src = set(grouped_by_count[grouped_by_count["src"] == n_src].index)
-#         curr_amp = set(is_target[(is_target["amplitude"] == amp).values]["stim_num"].values)
-#         stim_nums_by_condition.append(list(curr_src.intersection(curr_amp)))
-#     cond_stim_num_dict = dict(zip(conditions, stim_nums_by_condition))
-#     drawn_stim_nums = {(src, amp): np.random.choice(cond_stim_num_dict[(src, amp)],
-#                                                     n_draw, replace=False)
-#                        for src in n_srcs for amp in targ_amps}
-#
-#     # Next, order the stimuli in blocks
-#     all_block_list = []
-#     for i, src in enumerate(src_order_list):
-#         curr_amp_stim_nums = np.array([], dtype=int)
-#         for amp in targ_amps:
-#             curr_slice = slice( i     *n_trials_per_block_per_amp,
-#                                (i + 1)*n_trials_per_block_per_amp)
-#             curr_amp_stim_nums = \
-#                 np.append(curr_amp_stim_nums, drawn_stim_nums[(src, amp)][curr_slice])
-#         curr_stims = [SoundLoader(STIM_DIR/("stim_" + str(stim_num).zfill(5) + ".wav"))
-#                       for stim_num in curr_amp_stim_nums]
-#         # Build pattern items list
-#         curr_sub_df = stim_df.loc[(stim_df["stim_num"].isin(curr_amp_stim_nums)) &
-#                                   (stim_df["is_target"])]
-#         indices = [curr_sub_df.index[curr_sub_df["stim_num"] == stim_num]
-#                    for stim_num in curr_amp_stim_nums]
-#         pattern_items = [curr_sub_df.loc[idx.values[0]]["pattern"].split(" ") for idx in indices]
-#
-#         stim_tuple = list(zip(curr_stims, curr_amp_stim_nums, pattern_items))
-#         np.random.shuffle(stim_tuple)
-#         all_block_list.append(stim_tuple)
-#     return all_block_list, src_order_list

@@ -6,11 +6,13 @@ from utils.stim_tools import *
 ################################################################################
 # SYNTHESIS PARAMETERS
 ################################################################################
+# stim_type = "BUG"
+stim_type = "SMN"
 n_stim = 200
 n_srcs = [3]
 src_spacing = 40.
 target_freq = 2.
-target_traj_amp = [0., 5., 10., 15., 20., 25. 30.]
+target_traj_amp = [0., 5., 10., 15., 20., 25., 30., 35.]
 
 level = 65.
 spatial_resolution = 2. # average samples per degree over the whole trajectory
@@ -33,12 +35,23 @@ for curr_n in n_srcs:
         print("\nSynthesizing curr_n = {:d}, targ_amp = {:2.2f} deg stimuli...".format(\
               curr_n, amp))
         for _ in progress_bar(range(n_stim)):
-            # Make sources and patterns
-            talkers, sentences, snds = make_sentence(curr_n)
-            snds = zeropad_sounds(snds)
-            snds = normalize_rms(snds)
-            snds = [snd.make_binaural() for snd in snds]
-            t_dur = len(snds[0])/snds[0].fs
+            if stim_type == "BUG":
+                # Make sources and patterns
+                talkers, sentences, snds = make_sentence(curr_n)
+                snds = zeropad_sounds(snds)
+                t_dur = len(snds[0])/snds[0].fs
+                snds = normalize_rms(snds)
+                snds = [snd.make_binaural() for snd in snds]
+            elif stim_type == "SMN":
+                talkers, sentences, snds = make_sentence(curr_n)
+                snds = zeropad_sounds(snds)
+                t_dur = len(snds[0])/snds[0].fs
+                gns  = [ALL_WORDS_SPECT.to_Noise(t_dur, snds[0].fs) for snd in snds]
+                smns = [gns[i]*snds[i].extract_envelope() for i in range(len(gns))]
+                smns = normalize_rms(smns)
+                snds = [smn.make_binaural() for smn in smns]
+            else:
+                raise ValueError("invalid stim_type")
 
             # Designate target
             target_idx = np.random.randint(curr_n)
@@ -59,7 +72,7 @@ for curr_n in n_srcs:
             D = np.array([src_spacing*i for i in range(curr_n)])
             D = D - D.mean()
 
-            # Select target and make the trajectories
+            # Make trajectories for target and maskers
             trajs = [make_circular_sinuisoidal_trajectory(\
                          spatial_resolution, t_dur, r, elev,
                          A, B, C, D[i])
@@ -80,6 +93,8 @@ for curr_n in n_srcs:
             stimulus.save(STIM_DIR/stim_fname)
             stim_database = stim_database.append(\
                 [{"stim_num": stim_num,
+                  "stim_type": stim_type,
+                  "nominal_level": level,
                   "src": talkers[i],
                   "is_target": is_target[i],
                   "pattern": sentences[i],
