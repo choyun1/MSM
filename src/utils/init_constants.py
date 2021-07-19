@@ -1,5 +1,6 @@
-### Basic imports
-import sys
+from sys import path, platform
+from datetime import datetime
+from pytz import utc, timezone
 from pathlib import Path
 
 import numpy as np
@@ -11,27 +12,50 @@ print(80*"=")
 print("|| MSM INITIALIZATION")
 print(80*"=")
 
+
+### Time zone information for timestamps
+print("Setting time zone...")
+LOCAL_TZ = timezone("America/New_York")
+
+
 ### Directory paths
 print("Setting paths...")
-if sys.platform == "linux":
+if platform == "linux":
     PROJ_DIR = Path.home()/"Sync"/"KiddLab"/"MSM"
     BUGS_DIR = Path.home()/"Sync"/"Sounds"/"BUC-Mx_2014_With8Conjunctions"
     SIGTOOLS_DIR = Path.home()/"Sync"/"Python"/"sigtools"
-elif sys.platform == "win32":
-    sd.default.device = "ASIO Hammerfall DSP"
+elif platform == "win32":
+    # sd.default.device = "ASIO Hammerfall DSP"
+    sd.default.device = [1, 32] # KiddLab SFL Booth 5
     PROJ_DIR = Path("K:/")/"Cho"/"MSM"
     BUGS_DIR = Path("K:/")/"Cho"/"BUC-Mx_2014_With8Conjunctions"
     SIGTOOLS_DIR = Path("K:/")/"Cho"/"sigtools"
 else:
-    raise ValueError("\nunexpected operating system!\nuse 'linux' or 'win32'")
-sys.path.append(str(SIGTOOLS_DIR))
+    raise ValueError("\nunexpected operating system!\nmust be 'linux' or 'win32'")
+path.append(str(SIGTOOLS_DIR))
 DATA_DIR = PROJ_DIR/"data"
 EXMP_DIR = PROJ_DIR/"assets"/"ex"
 STIM_DIR = PROJ_DIR/"assets"/"stimuli"
 IMGS_DIR = PROJ_DIR/"assets"/"img"
+PATTERN_IMG_PATHS = [
+    IMGS_DIR/"tone_pattern_constant.png",
+    IMGS_DIR/"tone_pattern_rising.png",
+    IMGS_DIR/"tone_pattern_falling.png",
+    IMGS_DIR/"tone_pattern_alternating_UP_DOWN.png",
+    IMGS_DIR/"tone_pattern_step_up.png",
+    IMGS_DIR/"tone_pattern_step_down.png"
+]
+PATTERN_SMALL_IMG_PATHS = [
+    IMGS_DIR/"tone_pattern_constant_small.png",
+    IMGS_DIR/"tone_pattern_rising_small.png",
+    IMGS_DIR/"tone_pattern_falling_small.png",
+    IMGS_DIR/"tone_pattern_alternating_UP_DOWN_small.png",
+    IMGS_DIR/"tone_pattern_step_up_small.png",
+    IMGS_DIR/"tone_pattern_step_down_small.png"
+]
 
 
-### sigtools imports
+# ### sigtools imports
 print("Importing sigtools...")
 from sigtools.utils import *
 from sigtools.sounds import *
@@ -43,6 +67,16 @@ from sigtools.spatialization import *
 ### Set up sounddevice
 print("Setting up sounddevice...")
 sd.default.channels = 2
+
+
+### Dataframe columns
+STIM_COLUMNS = ["stim_num", "stim_type", "nominal_level",
+                "src", "is_target", "pattern",
+                "amplitude", "rate", "init_angle"]
+DATA_COLUMNS = ["run_num", "subject_ID", "stim_type", "task_type",
+                "block_num", "trial_num", "stim_num",
+                "subj_response", "correct",
+                "elapsed_time", "timestamp"]
 
 
 ### Level adjustments
@@ -101,37 +135,13 @@ ALL_WORDS_SPECT = MagnitudeSpectrum(ALL_WORDS_SUM)
 print("Set values for tone pattern synthesis...")
 PATTERN_TYPES = ["CONSTANT", "RISING", "FALLING",
                  "ALTERNATING", "STEP-UP", "STEP-DOWN"]
-# CENTER_FREQS = np.array([ 215,  269,  336,  420,  525,  656,  820, 1026,
-#                          1282, 1602, 2003, 2504, 3129, 3912, 4890, 6612])
+CENTER_FREQS = np.array([ 215,  269,  336,  420,  525,  656,  820, 1026,
+                         1282, 1602, 2003, 2504, 3129, 3912, 4890, 6612])
 CENTER_FREQS = np.array([215, 269, 336, 420, 525, 656, 820, 1026, 1282, 1602])
 MIN_BAND_VAL, MAX_BAND_VAL = -7, 7
 BAND_VALUES = np.linspace(MIN_BAND_VAL, MAX_BAND_VAL, 8)
-PATTERN_IMG_PATHS = [
-    IMGS_DIR/"tone_pattern_constant.png",
-    IMGS_DIR/"tone_pattern_rising.png",
-    IMGS_DIR/"tone_pattern_falling.png",
-    IMGS_DIR/"tone_pattern_alternating_UP_DOWN.png",
-    IMGS_DIR/"tone_pattern_step_up.png",
-    IMGS_DIR/"tone_pattern_step_down.png"
-]
-PATTERN_SMALL_IMG_PATHS = [
-    IMGS_DIR/"tone_pattern_constant_small.png",
-    IMGS_DIR/"tone_pattern_rising_small.png",
-    IMGS_DIR/"tone_pattern_falling_small.png",
-    IMGS_DIR/"tone_pattern_alternating_UP_DOWN_small.png",
-    IMGS_DIR/"tone_pattern_step_up_small.png",
-    IMGS_DIR/"tone_pattern_step_down_small.png"
-]
 
 
-### Dataframe columns
-STIM_COLUMNS = ["stim_num", "stim_type", "nominal_level",
-                "src", "is_target", "pattern",
-                "amplitude", "rate", "init_angle"]
-DATA_COLUMNS = ["run_num", "subject_ID", "stim_type", "task_type",
-                "block_num", "trial_num", "stim_num",
-                "subj_response", "correct",
-                "elapsed_time"]
-
+print(80*"=")
 print("Initialization complete!")
 print(80*"=")

@@ -6,91 +6,45 @@ def exit_program(win):
     core.quit()
 
 
-def make_tutorial_strs(task_type, stim_type):
-    if stim_type == "SMN":
-        intro_str = ""
-        ex1_str = ""
-        return intro_str,\
-               ex1_str,\
-               ex2_str,\
-               ex3_str,\
-               ex4_str,\
-               ex5_str,\
-               ex6_str,\
-               warn_str,\
-               final_str
-    elif task_type == "motion_detection":
-        intro_str = \
-            "Thank you for your participation!\n\n"\
-            "The first part of this experiment is a MOTION DETECTION task. We "\
-            "will walk through a small tutorial to familiarize you with the "\
-            "task.\n\n"\
-            "Press 'NEXT' to continue."
-        ex1_str = \
-            "Here is an example of a single talker moving back and forth around "\
-            "the CENTER.\n\nPlease listen closely."
-        ex2_str = "Here is another example of a moving talker."
-        ex3_str = \
-            "In the actual experiment, you will be presented with three "\
-            "talkers located LEFT, CENTER, and RIGHT. You must "\
-            "identify the one talker that is MOVING back and forth.\n\n"\
-            "Here is an example with three talkers. Press 'PLAY' when ready."
-        ex4_str = "Here is another example.\n\nPress 'PLAY' when ready."
-        ex5_str = "Here is one more example.\n\nPress 'PLAY' when ready."
-        ex6_str = \
-            "The amount of movement may change from trial to trial. The "\
-            "movement is very slight in this example.\n\nPress 'PLAY' when ready."
-        warn_str = \
-            "On some trials, the movement may be so small that it is "\
-            "difficult to identify the moving talker. In such cases, simply "\
-            "make your best guess."
-        final_str = "This concludes the tutorial.\n\nPress 'NEXT' to continue."
-        return intro_str,\
-               ex1_str,\
-               ex2_str,\
-               ex3_str,\
-               ex4_str,\
-               ex5_str,\
-               ex6_str,\
-               warn_str,\
-               final_str
-    else:
-        intro_str = \
-            "This is the SPEECH IDENTIFICATION portion of the experiment. As "\
-            "before, you will listen to a sound mixture of three male "\
-            "speakers. This time, you will be asked to report back the words "\
-            "spoken by the moving talker.\n\n"\
-            "Press 'NEXT' to continue."
-        ex1_str = \
-            "Here is a practice trial. Please listen for the moving talker "\
-            "and report back the words spoken by him in the correct order.\n\n"\
-            "Press 'PLAY' when ready."
-        ex2_str = "Here is another practice trial.\n\nPress 'PLAY' when ready."
-        ex3_str = "Here is one more practice trial.\n\nPress 'PLAY' when ready."
-        ex4_str = \
-            "As in the first part, the motion of the moving talker may vary. "\
-            "Here is an example with small target talker movement.\n\n"\
-            "Press 'PLAY' when ready."
-        ex5_str = "Here is another example.\n\nPress 'PLAY' when ready."
-        ex6_str = "Here is final example.\n\nPress 'PLAY' when ready."
-        warn_str = \
-            "You may have difficulty identifying the moving talker in "\
-            "some trials. Please make your best guess when that happens.\n\n\n"\
-            "Press 'NEXT' to continue."
-        final_str = "This concludes the tutorial.\n\nPress 'NEXT' to continue."
-        return intro_str,\
-               ex1_str,\
-               ex2_str,\
-               ex3_str,\
-               ex4_str,\
-               ex5_str,\
-               ex6_str,\
-               warn_str,\
-               final_str
+def make_tutorial_strs():
+    intro_str = \
+        "Thank you for participating in this experiment.\n\nWe will ask you " \
+        "to either identify the moving sound or report back the words spoken " \
+        "by the moving talker. We will begin by presenting some examples."
+    ex1_str = \
+        "Here is an example of a single NOISE source moving back and forth " \
+        "around the CENTER. Please listen carefully.\n\n" \
+        "Press 'PLAY' when ready."
+    ex2_str = \
+        "And this is an example of a single TALKER moving back and forth " \
+        "around the CENTER. Please listen carefully.\n\n" \
+        "Press 'PLAY' when ready."
+    ex3_str = \
+        "In the actual experiment, you will be presented with three " \
+        "sound sources located LEFT, CENTER, and RIGHT. You must " \
+        "identify the one sound that is moving back and forth.\n\n" \
+        "Here is an example with three TALKERS.\n\nPress 'PLAY' when ready."
+    ex4_str = \
+        "Here is an example with three NOISE sources. Please identify the " \
+        "MOVING sound.\n\nPress 'PLAY' when ready."
+    ex5_str = \
+        "In some tasks, we will ask you to report back the words spoken by " \
+        "the moving talker. Here is an example.\n\nPress 'PLAY' when ready."
+    ex6_str = \
+        "Here is a final example with three talkers. Please report back the " \
+        "words spoken by the MOVING talker.\n\nPress 'PLAY' when ready."
+    final_str = \
+        "It may be difficult to identify the moving talker in some trials. " \
+        "Please make your best guess when that happens. Next, we will do " \
+        "some practice before moving on to the experimental blocks.\n\n" \
+        "Press 'NEXT' to continue."
+    return intro_str, ex1_str, ex2_str, ex3_str, \
+        ex4_str, ex5_str, ex6_str, final_str
 
 
 def push_button_wait_logic(func):
     from functools import wraps
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         win = args[0]
@@ -119,7 +73,8 @@ def wait_for_push_button(win, mouse, push_button):
 def do_detection_task(win, mouse, push_button, helper_text,
                       afc_interface, target_idx):
     # Wait for user response using the AFC interface
-    trial_str = helper_text.text_stim.text + "\n\nWhich talker moved in this trial?"
+    trial_str = helper_text.text_stim.text + \
+        "\n\nWhich talker moved in this trial?"
     helper_text.set(text=trial_str, pos=(0, 0.63))
     helper_text.draw()
     afc_interface.draw()
@@ -191,21 +146,14 @@ def do_recall_task(win, mouse, push_button, helper_text,
     grid_logic(win, mouse, push_button, helper_text, n_slots,
                submission_queue, grid_interface)
 
-    ### Scoring for answer in EXACT ORDER
-    # Score subject responses
+    # Score subject responses in EXACT ORDER
     subj_response_correct = \
         sum(answer_queue.queue_items[i] == submission_queue.queue_items[i]
             for i in range(0, n_slots))
-    # # Compare the answer and submission one by one to toggle feedback color
-    # for i in range(0, n_slots):
-    #     if answer_queue.queue_items[i] == submission_queue.queue_items[i]:
-    #         submission_queue.set_border_color(i, (0, 255, 0))
-    #     else:
-    #         submission_queue.set_border_color(i, (255, 0, 0))
-    #     submission_queue.toggle_border(i)
 
     # Display feedback and ready
-    feedback_str = "{:d}/5 correct!\n\n\nPress 'NEXT' to continue".format(subj_response_correct)
+    feedback_str = "{:d}/5 correct!\n\n\nPress 'NEXT' to continue".format(
+        subj_response_correct)
     helper_text.set(text=feedback_str, pos=(0, 0))
     helper_text.draw()
     push_button.set(text="NEXT")

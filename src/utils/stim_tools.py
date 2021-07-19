@@ -1,12 +1,24 @@
 from utils.init_constants import *
 
 
+def convert_datatime_to_timestamp(datetime_obj):
+    timestr = "UTC {:s}-{:s}-{:s} {:s}:{:s}:{:s}.{:s}".format(
+        datetime_obj.strftime("%Y").zfill(4),
+        datetime_obj.strftime("%m").zfill(2),
+        datetime_obj.strftime("%d").zfill(2),
+        datetime_obj.strftime("%H").zfill(2),
+        datetime_obj.strftime("%M").zfill(2),
+        datetime_obj.strftime("%S").zfill(2),
+        str(datetime_obj.microsecond//1000).zfill(3))
+    return timestr
+
+
 def HL_adjustment(f):
     return np.interp(f, HL_FREQ, HL_to_SPL)
 
 
 def compute_attenuation(level, freq=None):
-    if freq is None: # broadband
+    if freq is None:  # broadband
         ref_level = 133
     else:
         ref_level = np.interp(freq, FFT_FREQ, SCALED_SPEC)
@@ -21,7 +33,7 @@ def make_sentence(n_talkers, cue_name=None, syntax_condition="syntactic"):
     if syntax_condition == "syntactic":
         sentence_words = \
             np.hstack([choice([name for name in NAMES if name != cue_name],
-                                  (n_talkers, 1), replace=False),
+                              (n_talkers, 1), replace=False),
                        choice(VERBS,      (n_talkers, 1), replace=False),
                        choice(NUMBERS,    (n_talkers, 1), replace=False),
                        choice(ADJECTIVES, (n_talkers, 1), replace=False),
@@ -30,17 +42,18 @@ def make_sentence(n_talkers, cue_name=None, syntax_condition="syntactic"):
         non_names = VERBS + NUMBERS + ADJECTIVES + NOUNS
         sentence_words = \
             np.hstack([choice([name for name in NAMES if name != cue_name],
-                                  (n_talkers, 1), replace=False),
+                              (n_talkers, 1), replace=False),
                        choice(non_names, (n_talkers, 4), replace=False)])
     else:
-        raise ValueError("invalid syntax_condition; choose 'syntactic' or 'random'")
+        raise ValueError(
+            "invalid syntax_condition; choose 'syntactic' or 'random'")
 
-    if cue_name: # If cue_name is given, change the first sentence to cue
+    if cue_name:  # If cue_name is given, change the first sentence to cue
         sentence_words[0, 0] = cue_name
 
-    sentence_sounds = [ concat_sounds([ ELIGIBLE_BUG_DICT["_".join([word, talkers[i]])]
-                                        for word in sentence_words[i, :] ])
-                        for i in range(n_talkers) ]
+    sentence_sounds = [concat_sounds([ELIGIBLE_BUG_DICT["_".join([word, talkers[i]])]
+                                      for word in sentence_words[i, :]])
+                       for i in range(n_talkers)]
     sentence_sounds = normalize_rms(sentence_sounds)
     sentence_words = [" ".join(sentence_words[i, :]).upper()
                       for i in range(n_talkers)]
@@ -51,30 +64,30 @@ def make_tone_pattern(pattern, fs, CF, n_tones, tone_dur, edge_dur):
     """Make tone pattern"""
     pattern = pattern.upper()
     # Define the sequence of % deviation from CF for the target pattern
-    if pattern == "CONSTANT": # constant
+    if pattern == "CONSTANT":  # constant
         band_value_sequence = n_tones*[np.random.choice(BAND_VALUES)]
-    elif pattern == "RISING": # rising
+    elif pattern == "RISING":  # rising
         band_value_sequence = np.linspace(MIN_BAND_VAL, MAX_BAND_VAL, n_tones)
-    elif pattern == "FALLING": # falling
+    elif pattern == "FALLING":  # falling
         band_value_sequence = np.linspace(MAX_BAND_VAL, MIN_BAND_VAL, n_tones)
-    elif pattern == "ALTERNATING": # alternating
+    elif pattern == "ALTERNATING":  # alternating
         from itertools import cycle
-        if np.random.randint(0, 2) == 0: # low high low high ...
+        if np.random.randint(0, 2) == 0:  # low high low high ...
             alternating_cycle = cycle([MIN_BAND_VAL, MAX_BAND_VAL])
-        else: # high low high low ...
+        else:  # high low high low ...
             alternating_cycle = cycle([MAX_BAND_VAL, MIN_BAND_VAL])
         band_value_sequence = [next(alternating_cycle) for _ in range(n_tones)]
-    elif pattern == "STEP-UP" or pattern == "STEP-DOWN": # step up or step down
-        if round(n_tones) % 2 == 0: # even number of tones
+    elif pattern == "STEP-UP" or pattern == "STEP-DOWN":  # step up or step down
+        if round(n_tones) % 2 == 0:  # even number of tones
             lower_half = n_tones//2*[MIN_BAND_VAL]
             upper_half = n_tones//2*[MAX_BAND_VAL]
-        else: # odd number of tones
+        else:  # odd number of tones
             lower_half = ((n_tones + 1)//2 - 1)*[MIN_BAND_VAL]
             upper_half = ((n_tones + 1)//2)*[MAX_BAND_VAL]
 
-        if pattern == "STEP-UP": # step up
+        if pattern == "STEP-UP":  # step up
             band_value_sequence = lower_half + upper_half
-        else: # step down
+        else:  # step down
             band_value_sequence = upper_half + lower_half
     else:
         raise ValueError("invalid tone pattern")
@@ -159,8 +172,9 @@ def make_circular_sinuisoidal_trajectory(spatial_resolution, T_dur, r, elev,
     traj_init_cycle: initial position of the trajectory in a cycle [0, 1)
     traj_displacement: center of the oscillation [deg] (i.e. displacement from origin)
     """
-    N = int(180*spatial_resolution*T_dur*traj_freq) # number of spatial samples
-    if N == 0: # handle static (i.e. zero) velocity case
+    N = int(180*spatial_resolution*T_dur *
+            traj_freq)  # number of spatial samples
+    if N == 0:  # handle static (i.e. zero) velocity case
         angular_traj = np.array([traj_displacement])
     else:
         sin, pi = np.sin, np.pi
@@ -191,45 +205,110 @@ def generate_latin_square(n, balanced=False):
     Williams, E. J. (1949): Experimental designs balanced
     for the estimation of residual effects of treatments.
     """
-    l = [ [((1 + j//2 if j%2 == 1 else n - j//2) + i)%n + 1
-           for j in range(n)]
-           for i in range(n)]
+    l = [[((1 + j//2 if j % 2 == 1 else n - j//2) + i) % n + 1
+          for j in range(n)]
+         for i in range(n)]
     if balanced:
-        if n%2 == 1:  # Repeat reversed for odd n
+        if n % 2 == 1:  # Repeat reversed for odd n
             l += [seq[::-1] for seq in l]
         return np.array(l) - 1
     else:
         l = np.array(l) - 1
-        l[1:] = np.random.permutation(l[1:]) # permute all rows except first
+        l[1:] = np.random.permutation(l[1:])  # permute all rows except first
         return l
 
 
-def choose_stim_for_run(stim_type, stim_df, targ_amps, n_trials_per_amp):
-    stim_df = stim_df[stim_df["stim_type"] == stim_type].reset_index(drop=True)
-    n_trials = len(targ_amps)*n_trials_per_amp
-    grouped_by_count = stim_df.groupby("stim_num").count()
-    n_talker_3_idx = grouped_by_count[grouped_by_count["src"] == 3].index.values
-    stim_df_3_talkers = stim_df[stim_df["stim_num"].isin(n_talker_3_idx)]
+def compute_n_trials(n_tasks,
+                     n_amps,
+                     n_trials_per_task_per_amp,
+                     n_trials_per_block_per_amp):
+    if n_trials_per_task_per_amp % n_trials_per_block_per_amp != 0:
+        raise ValueError("invalid n_trials_per_block_per_amp")
+    else:
+        n_blocks_per_task = int(
+            n_trials_per_task_per_amp/n_trials_per_block_per_amp)
+    n_blocks = n_blocks_per_task*n_tasks
+    n_trials = n_trials_per_task_per_amp*n_amps*n_tasks
+    n_trials_per_block = int(n_trials/n_blocks)
+    return n_blocks_per_task, n_blocks, n_trials, n_trials_per_block
 
-    # Draw stim_nums
-    drawn_stim_nums = []
-    for curr_amp in targ_amps:
-        curr_amp_stim_nums = \
-            stim_df_3_talkers[(stim_df_3_talkers["amplitude"] == curr_amp) &
-                               stim_df_3_talkers["is_target"]]["stim_num"].values
-        curr_draw = np.random.choice(curr_amp_stim_nums,
-                                     n_trials_per_amp,
-                                     replace=False)
-        drawn_stim_nums.append(curr_draw)
-    drawn_stim_nums = np.array(drawn_stim_nums).ravel()
-    np.random.shuffle(drawn_stim_nums)
 
-    # Iterate through stim_nums to load the sounds
-    stim_list = []
-    for stim_num in drawn_stim_nums:
-        curr_stim = SoundLoader(STIM_DIR/("stim_" + str(stim_num).zfill(5) + ".wav"))
-        curr_targ_idx = np.where(stim_df[stim_df["stim_num"] == stim_num]["is_target"].values)[0][0]
-        curr_pattern = stim_df[(stim_df["stim_num"] == stim_num) &
-                               (stim_df["is_target"])]["pattern"].values[0]
-        stim_list.append((stim_num, curr_stim, curr_targ_idx, curr_pattern))
-    return stim_list
+def generate_task_order(n_tasks, n_blocks_per_task, balanced=True):
+    from collections import deque
+    from numpy.matlib import repmat
+
+    latin_sq = generate_latin_square(n_tasks, balanced=balanced)
+    n_repetition_per_task = len(latin_sq)
+    if n_blocks_per_task % n_repetition_per_task != 0:
+        raise ValueError("invalid number of trials - does not fit with "
+                         "balanced Latin square design")
+    else:
+        n_repetitions = int(n_blocks_per_task/n_repetition_per_task)
+    deque_latin_sq = deque(latin_sq)
+    deque_latin_sq.rotate(np.random.randint(n_repetition_per_task))
+    rotated_latin_sq = np.array(deque_latin_sq)
+    repeated_latin_sq = repmat(rotated_latin_sq, n_repetitions, 1)
+    return repeated_latin_sq
+
+
+def generate_run_stim_order(stim_df,
+                            task_types,
+                            targ_amps,
+                            n_trials_per_task_per_amp,
+                            n_trials_per_block_per_amp,
+                            n_blocks_per_task,
+                            repeated_latin_sq):
+    from random import shuffle
+    def chunks(lst, n): return [lst[i:i + n] for i in range(0, len(lst), n)]
+
+    # Draw the stim numbers and organize into task types and target amplitudes
+    stim_num_dict1 = {}
+    for task in task_types:
+        stim_type, _ = task.split("-")
+        for amp in targ_amps:
+            curr_stim_nums = \
+                stim_df[(stim_df["is_target"]) &
+                        (stim_df["stim_type"] == stim_type) &
+                        (stim_df["amplitude"] == amp)]["stim_num"].values
+            chosen_stim_nums = np.random.choice(curr_stim_nums,
+                                                n_trials_per_task_per_amp,
+                                                replace=False)
+            list_stim_nums = chosen_stim_nums.tolist()
+            chunked_stim_nums = chunks(
+                list_stim_nums, n_trials_per_block_per_amp)
+            stim_num_dict1[(task, amp)] = chunked_stim_nums
+
+    # Organize stimulus numbers into task types and blocks
+    stim_num_dict2 = {}
+    for task in task_types:
+        accumulator2 = []
+        for block_num in range(n_blocks_per_task):
+            accumulator1 = []
+            for amp in targ_amps:
+                accumulator1 += stim_num_dict1[(task, amp)][block_num]
+            shuffle(accumulator1)  # randomize target amplitudes within a block
+            accumulator2.append(accumulator1)
+        stim_num_dict2[task] = accumulator2
+
+    # Organize stimulus numbers into blocks
+    blocked_stim_num_order = []
+    for j, row in enumerate(repeated_latin_sq):
+        for i in row:
+            task = task_types[i]
+            blocked_stim_num_order.append(stim_num_dict2[task][j])
+
+    return blocked_stim_num_order
+
+
+def generate_block_tuples(stim_df, block_stim_nums):
+    # Pack trial information into a tuples
+    block_order = []
+    for stim_num in block_stim_nums:
+        curr_stim_fname = "stim_" + str(stim_num).zfill(5) + ".wav"
+        curr_stim_path = STIM_DIR/curr_stim_fname
+        curr_stim_df = stim_df[stim_df["stim_num"] == stim_num]
+        target_idx = np.where(curr_stim_df["is_target"])[0][0]
+        target_sentence = curr_stim_df["pattern"].values[target_idx]
+        curr_stim = SoundLoader(curr_stim_path)
+        block_order.append((stim_num, curr_stim, target_idx, target_sentence))
+    return block_order
