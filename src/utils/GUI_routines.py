@@ -97,7 +97,7 @@ def do_detection_task(win, mouse, push_button, helper_text,
                     clicked = True
 
     # Score subject responses
-    subj_response_correct = user_response == target_idx
+    subj_response_correct = int(user_response == target_idx)
 
     # Set feedback text
     if subj_response_correct:

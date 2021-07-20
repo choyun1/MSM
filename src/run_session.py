@@ -18,7 +18,7 @@ run_data = pd.DataFrame(columns=DATA_COLUMNS)
 answer_choices = NAMES + VERBS + NUMBERS + ADJECTIVES + NOUNS
 
 # Session parameters
-subject_ID = "L437"
+subject_ID = "L478"
 task_types = ["SMN-motion_detection", "BUG-motion_detection", "BUG-speech_ID"]
 targ_amps = [5., 10., 15., 20., 25., 30.]
 n_trials_per_task_per_amp = 30
@@ -145,8 +145,8 @@ for i, curr_str in enumerate(tutorial_strs):
         wait_for_push_button(win, mouse, push_button)
 
 # Practice
-n_practice_trials_per_task_per_amp = 2
-n_practice_trials_per_block_per_amp = 2
+n_practice_trials_per_task_per_amp = 4
+n_practice_trials_per_block_per_amp = 4
 n_practice_blocks_per_task, n_practice_blocks, \
     n_practice_trials, n_practice_trials_per_block = \
     compute_n_trials(n_tasks,
@@ -291,7 +291,12 @@ for block_num, block_stim_nums in enumerate(run_stim_order):
             subj_response, correct = \
                 do_detection_task(win, mouse, push_button, helper_text,
                                   afc_interface, target_idx)
-            subj_response_str = ""
+            if subj_response == 0:
+                subj_response_str = "LEFT"
+            elif subj_response == 1:
+                subj_response_str = "CENTER"
+            else:
+                subj_response_str = "RIGHT"
         elif task_type == "speech_ID":
             ans_items = target_pattern.split()
             subj_response, correct = \
