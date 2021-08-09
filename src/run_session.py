@@ -18,7 +18,7 @@ run_data = pd.DataFrame(columns=DATA_COLUMNS)
 answer_choices = NAMES + VERBS + NUMBERS + ADJECTIVES + NOUNS
 
 # Session parameters
-subject_ID = "L478"
+subject_ID = "L485"
 task_types = ["SMN-motion_detection", "BUG-motion_detection", "BUG-speech_ID"]
 targ_amps = [5., 10., 15., 20., 25., 30.]
 n_trials_per_task_per_amp = 30
@@ -144,13 +144,19 @@ for i, curr_str in enumerate(tutorial_strs):
         win.flip()
         wait_for_push_button(win, mouse, push_button)
 
+################################################################################
+# PRACTICE
+################################################################################
 # Practice
-n_practice_trials_per_task_per_amp = 4
-n_practice_trials_per_block_per_amp = 4
+practice_targ_amps = [30.]
+n_practice_tasks = len(task_types)
+n_practice_amps = len(practice_targ_amps)
+n_practice_trials_per_task_per_amp = 20
+n_practice_trials_per_block_per_amp = 20
 n_practice_blocks_per_task, n_practice_blocks, \
     n_practice_trials, n_practice_trials_per_block = \
-    compute_n_trials(n_tasks,
-                     n_amps,
+    compute_n_trials(n_practice_tasks,
+                     n_practice_amps,
                      n_practice_trials_per_task_per_amp,
                      n_practice_trials_per_block_per_amp)
 practice_task_order = np.array([[1, 0, 2]])
@@ -158,7 +164,7 @@ practice_flattened_task_order = [1, 0, 2]
 practice_stim_order = \
     generate_run_stim_order(stim_df,
                             task_types,
-                            targ_amps,
+                            practice_targ_amps,
                             n_practice_trials_per_task_per_amp,
                             n_practice_trials_per_block_per_amp,
                             n_practice_blocks_per_task,
@@ -171,18 +177,39 @@ for block_num, block_stim_nums in enumerate(practice_stim_order):
     block_tuple = generate_block_tuples(stim_df, block_stim_nums)
 
     # Show current block information
-    if stim_type == "SMN":
-        stim_type_str = "NOISE"
-    elif stim_type == "BUG":
+    if stim_type == "BUG" and task_type == "motion_detection":
         stim_type_str = "SPEECH"
-    if task_type == "motion_detection":
         task_type_str = "MOTION DETECTION"
-    elif task_type == "speech_ID":
+        curr_block_str = \
+            "Practice block {:d} of {:d}\n\n" \
+            "This is a {:s} task with {:s} sound sources. Please listen " \
+            "carefully to the three sounds and identify the MOVING " \
+            "sound.\n\n\n" \
+            "Press 'START' when you are ready.".format(
+                block_num + 1, n_practice_blocks, task_type_str, stim_type_str)
+    elif stim_type == "SMN" and task_type == "motion_detection":
+        stim_type_str = "NOISE"
+        task_type_str = "MOTION DETECTION"
+        curr_block_str = \
+            "Practice block {:d} of {:d}\n\n" \
+            "This is a {:s} task with {:s} sound sources. Please listen " \
+            "carefully to the three sounds and identify the MOVING " \
+            "sound.\n\n\n" \
+            "Press 'START' when you are ready.".format(
+                block_num + 1, n_practice_blocks, task_type_str, stim_type_str)
+    elif stim_type == "BUG" and task_type == "speech_ID":
+        stim_type_str = "SPEECH"
         task_type_str = "SPEECH IDENTIFICATION"
-    curr_block_str = \
-        "Practice block {:d} of {:d}\n\nThis is a {:s} task with {:s} sound " \
-        "sources.\n\n\nPress 'START' when you are ready.".format(
-            block_num + 1, n_practice_blocks, task_type_str, stim_type_str)
+        curr_block_str = \
+            "Practice block {:d} of {:d}\n\n" \
+            "This is a {:s} task with {:s} sound sources. Please listen " \
+            "carefully to the three sounds and report back the WORDS SPOKEN " \
+            "by the moving talker.\n\n\n" \
+            "Press 'START' when you are ready.".format(
+                block_num + 1, n_practice_blocks, task_type_str, stim_type_str)
+    else:
+        raise ValueError
+
     helper_text.set(text=curr_block_str, pos=(0, 0.2))
     helper_text.draw()
     push_button.set(text="START")
@@ -207,18 +234,47 @@ for block_num, block_stim_nums in enumerate(practice_stim_order):
 
         # Wait for subject response and display feedback
         if task_type == "motion_detection":
-            _, _ = \
+            subj_response, correct = \
                 do_detection_task(win, mouse, push_button, helper_text,
                                   afc_interface, target_idx)
-            subj_response_str = ""
+            if subj_response == 0:
+                subj_response_str = "LEFT"
+            elif subj_response == 1:
+                subj_response_str = "CENTER"
+            else:
+                subj_response_str = "RIGHT"
         elif task_type == "speech_ID":
             ans_items = target_pattern.split()
-            _, _ = \
+            subj_response, correct = \
                 do_recall_task(win, mouse, push_button, helper_text,
                                subject_queue, answer_queue,
                                word_grid_interface, ans_items)
+            subj_response_str = " ".join(subj_response)
         else:
             raise ValueError("invalid task_type")
+
+        # Get time information
+        elapsed_time = session_timer.getTime()
+        now = datetime.now()
+        local_dt = LOCAL_TZ.localize(now, is_dst=None)
+        now_utc = local_dt.astimezone(utc)
+        timestr = convert_datatime_to_timestamp(now_utc)
+
+        # Save data
+        run_data = run_data.append(
+            {"run_num": run_num,
+             "subject_ID": subject_ID,
+             "stim_type": stim_type,
+             "task_type": task_type,
+             "block_num": "P" + str(block_num + 1),
+             "trial_num": trial_num + 1,
+             "stim_num": stim_num,
+             "subj_response": subj_response_str,
+             "correct": correct,
+             "elapsed_time": elapsed_time,
+             "timestamp": timestr},
+            ignore_index=True)
+        run_data.to_csv(save_path, index=False)
 
     # End of block screen
     end_block_str = "End of practice block {:d}\n\n".format(block_num + 1)
@@ -229,13 +285,23 @@ for block_num, block_stim_nums in enumerate(practice_stim_order):
     win.flip()
     wait_for_push_button(win, mouse, push_button)
 
+practice_finish_str = \
+    "Practice complete!\n\n\nPress 'NEXT' when ready."
+helper_text.set(text=practice_finish_str, pos=(0, 0.2))
+helper_text.draw()
+push_button.set(text="NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
 ################################################################################
 # MAIN BODY
 ################################################################################
 start_expt_str = \
     "Now we will begin the experiment. We will inform you the type of task " \
     "and the sounds you will hear at the beginning of each block. The amount " \
-    "of movement in the moving sound will vary from trial to trial.\n\n" \
+    "of movement in the moving sound will vary each trial from small to " \
+    "large or anything in-between.\n\n" \
     "Please remember to take breaks between the blocks if you are getting " \
     "fatigued."
 helper_text.set(text=start_expt_str, pos=(0, 0.2))
