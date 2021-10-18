@@ -172,8 +172,8 @@ def make_circular_sinuisoidal_trajectory(spatial_resolution, T_dur, r, elev,
     traj_init_cycle: initial position of the trajectory in a cycle [0, 1)
     traj_displacement: center of the oscillation [deg] (i.e. displacement from origin)
     """
-    N = int(180*spatial_resolution*T_dur *
-            traj_freq)  # number of spatial samples
+    N = int(180*spatial_resolution*T_dur
+            * traj_freq)  # number of spatial samples
     if N == 0:  # handle static (i.e. zero) velocity case
         angular_traj = np.array([traj_displacement])
     else:
@@ -267,9 +267,9 @@ def generate_run_stim_order(stim_df,
         stim_type, _ = task.split("-")
         for amp in targ_amps:
             curr_stim_nums = \
-                stim_df[(stim_df["is_target"]) &
-                        (stim_df["stim_type"] == stim_type) &
-                        (stim_df["amplitude"] == amp)]["stim_num"].values
+                stim_df[(stim_df["is_target"])
+                        & (stim_df["stim_type"] == stim_type)
+                        & (stim_df["amplitude"] == amp)]["stim_num"].values
             chosen_stim_nums = np.random.choice(curr_stim_nums,
                                                 n_trials_per_task_per_amp,
                                                 replace=False)

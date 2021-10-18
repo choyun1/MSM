@@ -18,12 +18,10 @@ run_data = pd.DataFrame(columns=DATA_COLUMNS)
 answer_choices = NAMES + VERBS + NUMBERS + ADJECTIVES + NOUNS
 
 # Session parameters
-subject_ID = ""
-task_types = ["BUG-motion_detection",
-              "SMN-motion_detection",
-              "BUG-speech_ID"]
+subject_ID = "test"
+task_types = ["BUG-speech_ID"]
 targ_amps = [5., 10., 15., 20., 25., 30.]
-n_trials_per_task_per_amp = 30
+n_trials_per_task_per_amp = 60
 n_trials_per_block_per_amp = 5
 n_tasks = len(task_types)
 n_amps = len(targ_amps)
@@ -65,104 +63,22 @@ answer_queue = WordQueue(win, n_slots=5, gap=0.05,
                          width=0.2, height=0.125, y_pos=0.5)
 
 ###############################################################################
-# TUTORIAL
-###############################################################################
-tutorial_strs = make_tutorial_strs()
-
-# Read in examples - answers are hardcoded and must be changed manually
-ex_target_answers = [0, 2]
-ex_speech_answers = ["JILL TOOK FOUR GREEN SOCKS",
-                     "JANE GAVE FIVE RED SHOES"]
-ex_stims = [SoundLoader(EXMP_DIR/f) for f in sorted(os.listdir(EXMP_DIR))
-            if f.endswith(".wav")]
-
-for i, curr_str in enumerate(tutorial_strs):
-    if i == 0:  # Intro screen
-        helper_text.set(text=curr_str, pos=(0, 0.2))
-        helper_text.draw()
-        push_button.set(text="NEXT")
-        push_button.draw()
-        win.flip()
-        wait_for_push_button(win, mouse, push_button)
-    elif i == 1 or i == 2:
-        curr_stim = ex_stims[i - 1]
-        helper_text.set(text=curr_str)
-        helper_text.draw()
-        push_button.set(text="PLAY")
-        push_button.draw()
-        win.flip()
-        wait_for_push_button(win, mouse, push_button)
-        helper_text.draw()
-        win.flip()
-        curr_stim.play(blocking=True)
-        core.wait(0.5)
-        helper_text.set(text="Press 'NEXT' to continue.")
-        helper_text.draw()
-        push_button.set(text="NEXT")
-        push_button.draw()
-        win.flip()
-        wait_for_push_button(win, mouse, push_button)
-    elif i == 3 or i == 4:  # Examples 3, 4
-        curr_targ_idx = ex_target_answers[i - 3]
-        curr_stim = ex_stims[i - 1]
-        helper_text.set(text=curr_str)
-        helper_text.draw()
-        push_button.set(text="PLAY")
-        push_button.draw()
-        win.flip()
-        wait_for_push_button(win, mouse, push_button)
-        helper_text.draw()
-        win.flip()
-        curr_stim.play(blocking=True)
-        core.wait(0.5)
-        helper_text.set(text=" ")
-        _, _ = \
-            do_detection_task(win, mouse, push_button, helper_text,
-                              afc_interface, curr_targ_idx)
-    elif i == 5 or i == 6:  # Examples 5, 6
-        curr_stim = ex_stims[i - 1]
-        curr_ans = ex_speech_answers[i - 5]
-        curr_ans_items = curr_ans.split()
-        helper_text.set(text=curr_str)
-        helper_text.draw()
-        push_button.set(text="PLAY")
-        push_button.draw()
-        win.flip()
-        wait_for_push_button(win, mouse, push_button)
-        helper_text.draw()
-        win.flip()
-        curr_stim.play(blocking=True)
-        core.wait(0.5)
-        helper_text.set(text=" ")
-        _, _ = \
-            do_recall_task(win, mouse, push_button, helper_text,
-                           subject_queue, answer_queue,
-                           word_grid_interface, curr_ans_items)
-    else:  # final_str
-        helper_text.set(text=curr_str)
-        helper_text.draw()
-        push_button.set(text="NEXT")
-        push_button.draw()
-        win.flip()
-        wait_for_push_button(win, mouse, push_button)
-
-###############################################################################
 # PRACTICE
 ###############################################################################
-# Practice
 practice_targ_amps = [30.]
-n_practice_tasks = len(task_types)
-n_practice_amps = len(practice_targ_amps)
 n_practice_trials_per_task_per_amp = 20
 n_practice_trials_per_block_per_amp = 20
+n_practice_tasks = len(task_types)
+n_practice_amps = len(practice_targ_amps)
+
 n_practice_blocks_per_task, n_practice_blocks, \
     n_practice_trials, n_practice_trials_per_block = \
     compute_n_trials(n_practice_tasks,
                      n_practice_amps,
                      n_practice_trials_per_task_per_amp,
                      n_practice_trials_per_block_per_amp)
-practice_task_order = np.array([[1, 0, 2]])
-practice_flattened_task_order = [1, 0, 2]
+practice_task_order = np.array([[0]])
+practice_flattened_task_order = [0]
 practice_stim_order = \
     generate_run_stim_order(stim_df,
                             task_types,
@@ -172,46 +88,33 @@ practice_stim_order = \
                             n_practice_blocks_per_task,
                             practice_task_order)
 
-# Practice blocks
+practice_str = \
+    "Thank you for participating in this experiment. In this task, we will " \
+    "ask you to repeat back the words spoken by the MOVING talker. We will " \
+    "always inform you which talker will be moving before you hear the " \
+    "sentence (i.e. LEFT, CENTER, or RIGHT). Please use this information " \
+    "to aid you in the task.\n\n" \
+    "We will begin by doing some practice. Press 'NEXT' when ready."
+helper_text.set(text=practice_str, pos=(0, 0.2))
+helper_text.draw()
+push_button.set(text="NEXT")
+push_button.draw()
+win.flip()
+wait_for_push_button(win, mouse, push_button)
+
+# Iterate through blocks
 for block_num, block_stim_nums in enumerate(practice_stim_order):
     curr_task_idx = practice_flattened_task_order[block_num]
     stim_type, task_type = task_types[curr_task_idx].split("-")
     block_tuple = generate_block_tuples(stim_df, block_stim_nums)
 
     # Show current block information
-    if stim_type == "BUG" and task_type == "motion_detection":
-        stim_type_str = "SPEECH"
-        task_type_str = "MOTION DETECTION"
-        curr_block_str = \
-            "Practice block {:d} of {:d}\n\n" \
-            "This is a {:s} task with {:s} sound sources. Please listen " \
-            "carefully to the three sounds and identify the MOVING " \
-            "sound.\n\n\n" \
-            "Press 'START' when you are ready.".format(
-                block_num + 1, n_practice_blocks, task_type_str, stim_type_str)
-    elif stim_type == "SMN" and task_type == "motion_detection":
-        stim_type_str = "NOISE"
-        task_type_str = "MOTION DETECTION"
-        curr_block_str = \
-            "Practice block {:d} of {:d}\n\n" \
-            "This is a {:s} task with {:s} sound sources. Please listen " \
-            "carefully to the three sounds and identify the MOVING " \
-            "sound.\n\n\n" \
-            "Press 'START' when you are ready.".format(
-                block_num + 1, n_practice_blocks, task_type_str, stim_type_str)
-    elif stim_type == "BUG" and task_type == "speech_ID":
-        stim_type_str = "SPEECH"
-        task_type_str = "SPEECH IDENTIFICATION"
-        curr_block_str = \
-            "Practice block {:d} of {:d}\n\n" \
-            "This is a {:s} task with {:s} sound sources. Please listen " \
-            "carefully to the three sounds and report back the WORDS SPOKEN " \
-            "by the moving talker.\n\n\n" \
-            "Press 'START' when you are ready.".format(
-                block_num + 1, n_practice_blocks, task_type_str, stim_type_str)
-    else:
-        raise ValueError
-
+    stim_type_str = "SPEECH"
+    task_type_str = "SPEECH IDENTIFICATION"
+    curr_block_str = \
+        "Block {:d} of {:d}\n\nThis is a {:s} task with {:s} sound sources." \
+        "\n\n\nPress 'START' when you are ready.".format(
+            block_num + 1, n_practice_blocks, task_type_str, stim_type_str)
     helper_text.set(text=curr_block_str, pos=(0, 0.2))
     helper_text.draw()
     push_button.set(text="START")
@@ -222,30 +125,30 @@ for block_num, block_stim_nums in enumerate(practice_stim_order):
     # Iterate through trials
     for trial_num, (stim_num, stim, target_idx, target_pattern) \
             in enumerate(block_tuple):
+        # True answer
+        if target_idx == 0:
+            target_loc_str = "LEFT"
+        elif target_idx == 1:
+            target_loc_str = "CENTER"
+        else:
+            target_loc_str = "RIGHT"
+
         # Display trial number
-        trial_txt = "Practice block {:d} of {:d}\nTrial {:d} of {:d}".format(
+        trial_txt = "Block {:d} of {:d}\nTrial {:d} of {:d}".format(
             block_num + 1, n_practice_blocks,
             trial_num + 1, n_practice_trials_per_block)
-        helper_text.set(text=trial_txt, pos=(0, 0.75))
+        cue_txt = "\n\n\nThe moving talker's location is\n\n{:s}".format(
+            target_loc_str)
+        helper_text.set(text=trial_txt + cue_txt, pos=(0, 0.25))
         helper_text.draw()
         win.flip()
 
         # Play stimulus
-        core.wait(0.25)
+        core.wait(1.8)
         stim.play(blocking=True)
 
         # Wait for subject response and display feedback
-        if task_type == "motion_detection":
-            subj_response, correct = \
-                do_detection_task(win, mouse, push_button, helper_text,
-                                  afc_interface, target_idx)
-            if subj_response == 0:
-                subj_response_str = "LEFT"
-            elif subj_response == 1:
-                subj_response_str = "CENTER"
-            else:
-                subj_response_str = "RIGHT"
-        elif task_type == "speech_ID":
+        if task_type == "speech_ID":
             ans_items = target_pattern.split()
             subj_response, correct = \
                 do_recall_task(win, mouse, push_button, helper_text,
@@ -266,8 +169,8 @@ for block_num, block_stim_nums in enumerate(practice_stim_order):
         run_data = run_data.append(
             {"run_num": run_num,
              "subject_ID": subject_ID,
-             "stim_type": stim_type,
-             "task_type": task_type,
+             "stim_type": "BUG",
+             "task_type": "pre-cue_SI",
              "block_num": "P" + str(block_num + 1),
              "trial_num": trial_num + 1,
              "stim_num": stim_num,
@@ -300,10 +203,11 @@ wait_for_push_button(win, mouse, push_button)
 # MAIN BODY
 ###############################################################################
 start_expt_str = \
-    "Now we will begin the experiment. We will inform you the type of task " \
-    "and the sounds you will hear at the beginning of each block. The amount " \
-    "of movement in the moving sound will vary each trial from small to " \
-    "large or anything in-between.\n\n" \
+    "Now we will begin the experiment. As in the practice blocks, you will " \
+    "be asked to report back the words spoken by the MOVING talker." \
+    "You will always be informed which talker will be moving BEFORE the " \
+    "sound is played. The amount of movement in the moving sound will vary " \
+    "each trial from small to large or anything in-between.\n\n" \
     "Please remember to take breaks between the blocks if you are getting " \
     "fatigued."
 helper_text.set(text=start_expt_str, pos=(0, 0.2))
@@ -320,14 +224,8 @@ for block_num, block_stim_nums in enumerate(run_stim_order):
     block_tuple = generate_block_tuples(stim_df, block_stim_nums)
 
     # Show current block information
-    if stim_type == "SMN":
-        stim_type_str = "NOISE"
-    elif stim_type == "BUG":
-        stim_type_str = "SPEECH"
-    if task_type == "motion_detection":
-        task_type_str = "MOTION DETECTION"
-    elif task_type == "speech_ID":
-        task_type_str = "SPEECH IDENTIFICATION"
+    stim_type_str = "SPEECH"
+    task_type_str = "SPEECH IDENTIFICATION"
     curr_block_str = \
         "Block {:d} of {:d}\n\nThis is a {:s} task with {:s} sound sources." \
         "\n\n\nPress 'START' when you are ready.".format(
@@ -342,30 +240,30 @@ for block_num, block_stim_nums in enumerate(run_stim_order):
     # Iterate through trials
     for trial_num, (stim_num, stim, target_idx, target_pattern) \
             in enumerate(block_tuple):
+        # True answer
+        if target_idx == 0:
+            target_loc_str = "LEFT"
+        elif target_idx == 1:
+            target_loc_str = "CENTER"
+        else:
+            target_loc_str = "RIGHT"
+
         # Display trial number
         trial_txt = "Block {:d} of {:d}\nTrial {:d} of {:d}".format(
             block_num + 1, n_blocks,
             trial_num + 1, n_trials_per_block)
-        helper_text.set(text=trial_txt, pos=(0, 0.75))
+        cue_txt = "\n\n\nThe moving talker's location is\n\n{:s}".format(
+            target_loc_str)
+        helper_text.set(text=trial_txt + cue_txt, pos=(0, 0.25))
         helper_text.draw()
         win.flip()
 
         # Play stimulus
-        core.wait(0.25)
+        core.wait(1.8)
         stim.play(blocking=True)
 
         # Wait for subject response and display feedback
-        if task_type == "motion_detection":
-            subj_response, correct = \
-                do_detection_task(win, mouse, push_button, helper_text,
-                                  afc_interface, target_idx)
-            if subj_response == 0:
-                subj_response_str = "LEFT"
-            elif subj_response == 1:
-                subj_response_str = "CENTER"
-            else:
-                subj_response_str = "RIGHT"
-        elif task_type == "speech_ID":
+        if task_type == "speech_ID":
             ans_items = target_pattern.split()
             subj_response, correct = \
                 do_recall_task(win, mouse, push_button, helper_text,
@@ -386,8 +284,8 @@ for block_num, block_stim_nums in enumerate(run_stim_order):
         run_data = run_data.append(
             {"run_num": run_num,
              "subject_ID": subject_ID,
-             "stim_type": stim_type,
-             "task_type": task_type,
+             "stim_type": "BUG",
+             "task_type": "pre-cue_SI",
              "block_num": block_num + 1,
              "trial_num": trial_num + 1,
              "stim_num": stim_num,
